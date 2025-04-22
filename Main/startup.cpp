@@ -1,4 +1,5 @@
 #include "startup.h"
+#include "main.h"
 
 #include "stm32h7xx_hal.h"
 #include "ltdc.h"
@@ -94,7 +95,7 @@ extern "C" void loop()
 	//bk_loop();
 	//loop_demo_colors();
 	//MX_USB_HOST_Process();
-	HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_1);
+	HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
 	HAL_Delay(500);
 }
 
@@ -210,14 +211,6 @@ static void LtdcInit()
 	{
 		Error_Handler();
 	}
-
-	// Unfortunately, pin A1 is an LED, take it back :)
-	GPIO_InitTypeDef GPIO_InitStruct = {0};
-	GPIO_InitStruct.Pin = GPIO_PIN_1;
-	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-	GPIO_InitStruct.Pull = GPIO_NOPULL;
-	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
 	HAL_LTDC_ConfigCLUT(&hltdc, L8Clut, 256, LTDC_LAYER_1);
 	HAL_LTDC_EnableCLUT(&hltdc, LTDC_LAYER_1);
