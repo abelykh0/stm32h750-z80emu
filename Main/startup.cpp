@@ -58,11 +58,11 @@ extern "C" void setup()
 	*/
 
 	LtdcInit();
+	init_demo_colors();
 
 	/*
 	HAL_PWREx_EnableUSBVoltageDetector();
 
-	//init_demo_colors();
 	if (f_mount(&SDFatFS, (TCHAR*)u"1:/", 1) == FR_OK)
 	{
 		FIL file;
@@ -112,6 +112,21 @@ static void MapFlash()
 	w25qxx_Startup(w25qxx_NormalMode); // w25qxx_DTRMode
 }
 
+static uint32_t Convert2BitColor(uint32_t color)
+{
+	switch (color)
+	{
+	case 0x00:
+		return 0x00;
+	case 0x01:
+		return 0x55;
+	case 0x02:
+		return 0xAA;
+	case 0x03:
+		return 0xFF;
+	}
+}
+
 static void PrepareClut()
 {
 	for (uint32_t i = 0; i < 256; i++)
@@ -119,19 +134,17 @@ static void PrepareClut()
 		// xxBBGGRR > ARBG
 		uint32_t a = 0xff000000;
 
-		// R3,R4
+		// R
 		uint32_t paletteR = i & 0x0003;
-		uint32_t r = paletteR << 3;
-		r <<= 16;
+		uint32_t r = Convert2BitColor(paletteR) << 16;
 
-		// G3,G4
-		uint32_t paletteG = i & 0x000C;
-		uint32_t g = paletteG << 1; // >> 2 << 3
-		g <<= 8;
+		// G
+		uint32_t paletteG = (i & 0x000C) >> 2;
+		uint32_t g = Convert2BitColor(paletteG) << 8;
 
-		// B2,B3
-		uint32_t paletteB = i & 0x0030;
-		uint32_t b = paletteB >> 2; // >> 4 << 2
+		// B
+		uint32_t paletteB = (i & 0x0030) >> 4;
+		uint32_t b = Convert2BitColor(paletteB);
 
 		L8Clut[i] = a | r | g | b;
 	}
