@@ -14,6 +14,7 @@
 #include "emulator/bkEmu.h"
 #include "demo_colors/demo_colors.h"
 #include "demo_colors/display_bmp.h"
+#include "demo_colors/gradient.h"
 
 extern JPEG_HandleTypeDef hjpeg;
 
@@ -34,7 +35,7 @@ extern "C" void initialize()
 extern "C" void setup()
 {
 	MapFlash();
-
+/*
 	if (f_mount(&SDFatFS, SDPath, 1) == FR_OK)
 	{
 		FIL file;
@@ -47,6 +48,9 @@ extern "C" void setup()
 
 		f_mount(nullptr, nullptr, 1);
 	}
+*/
+
+	gradient(VideoRam, L8Clut);
 
 	LtdcInit();
 	//init_demo_colors();
