@@ -35,22 +35,21 @@ extern "C" void initialize()
 extern "C" void setup()
 {
 	MapFlash();
-/*
+
 	if (f_mount(&SDFatFS, SDPath, 1) == FR_OK)
 	{
 		FIL file;
 		if (f_open(&file, u8"/Keyboard720x400.bmp", FA_READ) == FR_OK)
 		{
-			load_bmp_image(&file, VideoRam, L8Clut, H_SIZE, V_SIZE);
+			load_bmp_image(&file, VideoRam, L8Clut);
 
 			f_close(&file);
 		}
 
 		f_mount(nullptr, nullptr, 1);
 	}
-*/
 
-	gradient(VideoRam, L8Clut);
+	//gradient(VideoRam, L8Clut);
 
 	LtdcInit();
 

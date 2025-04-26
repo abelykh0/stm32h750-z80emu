@@ -8,7 +8,7 @@
 extern "C" {
 #endif
 
-int load_bmp_image(FIL* bmp_file, uint8_t* indexed_image, uint32_t* clut, int width, int height);
+int load_bmp_image(FIL* bmp_file, uint8_t* indexed_image, uint32_t* clut);
 
 #ifdef __cplusplus
 }
