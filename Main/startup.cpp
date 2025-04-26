@@ -13,6 +13,7 @@
 #include "screen/screen.h"
 #include "emulator/bkEmu.h"
 #include "demo_colors/demo_colors.h"
+#include "demo_colors/display_bmp.h"
 
 extern JPEG_HandleTypeDef hjpeg;
 
@@ -32,62 +33,23 @@ extern "C" void initialize()
 
 extern "C" void setup()
 {
-	/*
-	// Read ROMs from external flash
-	// (the built-in flash is only 128K)
 	MapFlash();
-	if (f_mount(&USERFatFS, (TCHAR*)u"1:/", 1) == FR_OK)
+
+	if (f_mount(&SDFatFS, SDPath, 1) == FR_OK)
 	{
 		FIL file;
-		if (f_open(&file, (const TCHAR*)u"1:/BASIC10.ROM", FA_READ) == FR_OK)
+		if (f_open(&file, u8"Keyboard720x400.bmp", FA_READ) == FR_OK)
 		{
-			UINT bytesRead = sizeof(basic);
-			f_read(&file, basic, bytesRead, &bytesRead);
-			f_close(&file);
-		}
+			load_bmp_image(&file, VideoRam, L8Clut, H_SIZE, V_SIZE);
 
-		if (f_open(&file, (const TCHAR*)u"1:/MONIT10.ROM", FA_READ) == FR_OK)
-		{
-			UINT bytesRead = sizeof(monitor);
-			f_read(&file, monitor, bytesRead, &bytesRead);
 			f_close(&file);
 		}
 
 		f_mount(nullptr, nullptr, 1);
 	}
-	*/
 
 	LtdcInit();
-	init_demo_colors();
-
-	/*
-	HAL_PWREx_EnableUSBVoltageDetector();
-
-	if (f_mount(&SDFatFS, (TCHAR*)u"1:/", 1) == FR_OK)
-	{
-		FIL file;
-		if (f_open(&file, (const TCHAR*)u"1:/Keyboard720x400.bmp", FA_READ) == FR_OK)
-		{
-			// read BMP file header
-			bmpHeader header;
-			UINT bytesRead = sizeof(header);
-			f_read(&file, &header, bytesRead, &bytesRead);
-			uint32_t offset = header.offsetPixels;
-
-			// Skip to pixels
-			f_lseek(&file, offset);
-
-			// Read pixels
-			bytesRead = sizeof(VideoRam);
-			f_read(&file, VideoRam, bytesRead, &bytesRead);
-
-			f_close(&file);
-		}
-
-		f_mount(nullptr, nullptr, 1);
-	}
-*/
-
+	//init_demo_colors();
 }
 
 extern "C" void loop()

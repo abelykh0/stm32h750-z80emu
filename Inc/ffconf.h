@@ -126,12 +126,12 @@
 /  memory for the working buffer, memory management functions, ff_memalloc() and
 /  ff_memfree(), must be added to the project. */
 
-#define _LFN_UNICODE    1 /* 0:ANSI/OEM or 1:Unicode */
+#define _LFN_UNICODE    0 /* 0:ANSI/OEM or 1:Unicode */
 /* This option switches character encoding on the API. (0:ANSI/OEM or 1:UTF-16)
 /  To use Unicode string for the path name, enable LFN and set _LFN_UNICODE = 1.
 /  This option also affects behavior of string I/O functions. */
 
-#define _STRF_ENCODE    0
+#define _STRF_ENCODE    3
 /* When _LFN_UNICODE == 1, this option selects the character encoding ON THE FILE to
 /  be read/written via string I/O functions, f_gets(), f_putc(), f_puts and f_printf().
 /
@@ -175,7 +175,7 @@
 /  arbitrary physical drive and partition listed in the VolToPart[]. Also f_fdisk()
 /  function will be available. */
 #define _MIN_SS    512  /* 512, 1024, 2048 or 4096 */
-#define _MAX_SS    512  /* 512, 1024, 2048 or 4096 */
+#define _MAX_SS    4096  /* 512, 1024, 2048 or 4096 */
 /* These options configure the range of sector size to be supported. (512, 1024,
 /  2048 or 4096) Always set both 512 for most systems, all type of memory cards and
 /  harddisk. But a larger value may be required for on-board flash memory and some
