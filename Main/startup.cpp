@@ -5,7 +5,7 @@
 #include "ltdc.h"
 #include "quadspi.h"
 #include "w25qxx_qspi.h"
-#include "user_diskio.h"
+//#include "user_diskio.h"
 #include "fatfs.h"
 #include "usb_host.h"
 #include "usbh_hid.h"
@@ -38,7 +38,7 @@ extern "C" void setup()
 	if (f_mount(&SDFatFS, SDPath, 1) == FR_OK)
 	{
 		FIL file;
-		if (f_open(&file, u8"Keyboard720x400.bmp", FA_READ) == FR_OK)
+		if (f_open(&file, u8"/Keyboard720x400.bmp", FA_READ) == FR_OK)
 		{
 			load_bmp_image(&file, VideoRam, L8Clut, H_SIZE, V_SIZE);
 
