@@ -53,6 +53,7 @@ extern "C" void setup()
 	gradient(VideoRam, L8Clut);
 
 	LtdcInit();
+
 	//init_demo_colors();
 }
 
@@ -62,6 +63,7 @@ extern "C" void loop()
 	//loop_demo_colors();
 	//MX_USB_HOST_Process();
 	HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+	//HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_8);
 	HAL_Delay(500);
 }
 

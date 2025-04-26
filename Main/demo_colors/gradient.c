@@ -16,12 +16,15 @@ void gradient(uint8_t* indexed_image, uint32_t* clut)
 			case 1:
 				r = (brightness << 2) | 0x03;
 				break;
+
 			case 2:
 				g = (brightness << 2) | 0x03;
 				break;
+
 			case 3:
 				b = (brightness << 2) | 0x03;
 				break;
+
 			default:
 				// white
 				r = (brightness << 2) | 0x03;
