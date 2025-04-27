@@ -2,8 +2,6 @@
 #include <stdint.h>
 #include "display_bmp.h"
 
-#pragma once
-
 #include <stdint.h>
 
 #pragma pack(push, 1)  // exact layout without padding

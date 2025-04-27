@@ -4,7 +4,6 @@
 
 #include "demo_colors.h"
 #include "screen/screen.h"
-#include "keyboard/ps2_keyboard.h"
 
 static Display::Screen screen;
 

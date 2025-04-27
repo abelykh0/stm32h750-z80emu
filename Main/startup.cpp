@@ -11,7 +11,6 @@
 #include "usbh_hid.h"
 
 #include "screen/screen.h"
-#include "emulator/bkEmu.h"
 #include "demo_colors/demo_colors.h"
 #include "demo_colors/display_bmp.h"
 #include "demo_colors/gradient.h"
@@ -19,13 +18,11 @@
 extern JPEG_HandleTypeDef hjpeg;
 
 static uint32_t L8Clut[256];
-uint8_t VideoRam[H_SIZE * V_SIZE];// __attribute__(( section(".sram2") ));
 
 static Display::Screen screen;
 
 static void MapFlash();
 static void PrepareClut();
-static void LtdcInit();
 
 extern "C" void initialize()
 {
@@ -39,7 +36,7 @@ extern "C" void setup()
 	if (f_mount(&SDFatFS, SDPath, 1) == FR_OK)
 	{
 		FIL file;
-		if (f_open(&file, u8"/Keyboard720x400.bmp", FA_READ) == FR_OK)
+		if (f_open(&file, u8"/Squirrel720x400.bmp", FA_READ) == FR_OK)
 		{
 			load_bmp_image(&file, VideoRam, L8Clut);
 
@@ -66,12 +63,6 @@ extern "C" void loop()
 	HAL_Delay(500);
 }
 
-extern "C" void USBH_HID_EventCallback(USBH_HandleTypeDef *phost)
-{
-	HID_KEYBD_Info_TypeDef* keyboardInfo = USBH_HID_GetKeybdInfo(phost);
-	//USBH_HID_GetASCIICode(USBH_HID_GetKeybdInfo(phost))
-}
-
 static void MapFlash()
 {
 	w25qxx_Init();
@@ -89,7 +80,7 @@ static uint32_t Convert2BitColor(uint32_t color)
 		return 0x55;
 	case 0x02:
 		return 0xAA;
-	case 0x03:
+	default:
 		return 0xFF;
 	}
 }
@@ -117,7 +108,7 @@ static void PrepareClut()
 	}
 }
 
-static void LtdcInit()
+void LtdcInit()
 {
 	LTDC_LayerCfgTypeDef pLayerCfg = {0};
 	hltdc.Instance = LTDC;
