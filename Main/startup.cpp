@@ -1,28 +1,25 @@
-#include "startup.h"
-#include "main.h"
-
 #include "stm32h7xx_hal.h"
-#include "ltdc.h"
-#include "quadspi.h"
-#include "w25qxx_qspi.h"
-//#include "user_diskio.h"
-#include "fatfs.h"
+#include <stdio.h>
+
+#include "gpio.h"
+#include "tim.h"
 #include "usb_host.h"
 #include "usbh_hid.h"
+#include "fatfs.h"
 
-#include "screen/screen.h"
-#include "demo_colors/demo_colors.h"
-#include "demo_colors/display_bmp.h"
-#include "demo_colors/gradient.h"
+#include "vga.h"
+#include "w25qxx_qspi.h"
+#include "config.h"
+#include "emulator.h"
+#include "sdcard.h"
+#include "emulator/videoRam.h"
+#include "emulator/z80main.h"
+#include "emulator/z80input.h"
+#include "keyboard/keyboard.h"
 
-extern JPEG_HandleTypeDef hjpeg;
-
-static uint32_t L8Clut[256];
-
-static Display::Screen screen;
+Display::Screen fullScreen;
 
 static void MapFlash();
-static void PrepareClut();
 
 extern "C" void initialize()
 {
@@ -32,7 +29,7 @@ extern "C" void initialize()
 extern "C" void setup()
 {
 	MapFlash();
-
+/*
 	if (f_mount(&SDFatFS, SDPath, 1) == FR_OK)
 	{
 		FIL file;
@@ -47,20 +44,91 @@ extern "C" void setup()
 	}
 
 	//gradient(VideoRam, L8Clut);
-
+*/
 	LtdcInit();
 
-	//init_demo_colors();
+	fullScreen.Clear();
+
+	HAL_TIM_Base_Start_IT(&htim7);
+
+	videoRam.ShowScreenshot((uint8_t*)QSPI_BASE);
+	//zx_setup();
 }
 
 extern "C" void loop()
 {
-	//bk_loop();
-	//loop_demo_colors();
-	//MX_USB_HOST_Process();
-	HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-	//HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_8);
-	HAL_Delay(500);
+	if (loadSnapshotLoop())
+	{
+		return;
+	}
+
+	if (saveSnapshotLoop())
+	{
+		return;
+	}
+
+	if (showKeyboardLoop())
+	{
+		return;
+	}
+
+	zx_loop();
+	int8_t result = GetScanCode(false);
+	switch (result)
+	{
+	case KEY_ESCAPE:
+		clearHelp();
+		break;
+
+	case KEY_F1:
+		toggleHelp();
+		break;
+
+	case KEY_F2:
+		if (!saveSnapshotSetup())
+		{
+			showErrorMessage("Cannot initialize SD card");
+		}
+		break;
+
+	case KEY_F3:
+		if (!loadSnapshotSetup())
+		{
+			showErrorMessage("Error when loading from SD card");
+		}
+		break;
+
+	case KEY_F5:
+		zx_reset();
+		showHelp();
+		break;
+
+	case KEY_F10:
+		showKeyboardSetup();
+		break;
+
+	case KEY_F12:
+		showRegisters();
+		break;
+	}
+}
+
+extern "C" uint32_t HAL_GetTick(void)
+{
+  return uwTick;
+}
+
+extern "C" bool onHardFault()
+{
+	/*
+	uint32_t cfsr = SCB->CFSR; // Configurable Fault Status Register
+	uint32_t hfsr = SCB->HFSR; // Hard Fault Status Register
+	uint32_t mmfar = SCB->MMFAR; // Memory Management Fault Address
+	uint32_t bfar = SCB->BFAR; // Bus Fault Address
+	char buffer[20];
+	sprintf(buffer, "%08lX", hfsr);
+	*/
+	return true;
 }
 
 static void MapFlash()
@@ -68,121 +136,4 @@ static void MapFlash()
 	w25qxx_Init();
 	w25qxx_EnterQPI();
 	w25qxx_Startup(w25qxx_NormalMode); // w25qxx_DTRMode
-}
-
-static uint32_t Convert2BitColor(uint32_t color)
-{
-	switch (color)
-	{
-	case 0x00:
-		return 0x00;
-	case 0x01:
-		return 0x55;
-	case 0x02:
-		return 0xAA;
-	default:
-		return 0xFF;
-	}
-}
-
-static void PrepareClut()
-{
-	for (uint32_t i = 0; i < 256; i++)
-	{
-		// xxBBGGRR > ARBG
-		uint32_t a = 0xff000000;
-
-		// R
-		uint32_t paletteR = i & 0x0003;
-		uint32_t r = Convert2BitColor(paletteR) << 16;
-
-		// G
-		uint32_t paletteG = (i & 0x000C) >> 2;
-		uint32_t g = Convert2BitColor(paletteG) << 8;
-
-		// B
-		uint32_t paletteB = (i & 0x0030) >> 4;
-		uint32_t b = Convert2BitColor(paletteB);
-
-		L8Clut[i] = a | r | g | b;
-	}
-}
-
-void LtdcInit()
-{
-	LTDC_LayerCfgTypeDef pLayerCfg = {0};
-	hltdc.Instance = LTDC;
-
-	LTDC_InitTypeDef* init = &hltdc.Init;
-	init->DEPolarity = LTDC_DEPOLARITY_AL;
-	init->PCPolarity = LTDC_PCPOLARITY_IIPC;
-	init->Backcolor.Blue = 0;
-	init->Backcolor.Green = 0;
-	init->Backcolor.Red = 0;
-
-	// Horizontal
-	init->HSPolarity = VIDEO_MODE_H_POLARITY;
-	init->HorizontalSync = VIDEO_MODE_H_SYNC - 1;
-	init->AccumulatedHBP = init->HorizontalSync + VIDEO_MODE_H_BACKPORCH;
-	init->AccumulatedActiveW = init->AccumulatedHBP + VIDEO_MODE_H_WIDTH;
-	init->TotalWidth = init->AccumulatedActiveW + VIDEO_MODE_H_FRONTPORCH;
-
-	// Vertical
-	init->VSPolarity = VIDEO_MODE_V_POLARITY;
-	init->VerticalSync = VIDEO_MODE_V_SYNC - 1;
-	init->AccumulatedVBP = init->VerticalSync + VIDEO_MODE_V_BACKPORCH;
-	init->AccumulatedActiveH = init->AccumulatedVBP + VIDEO_MODE_V_HEIGHT;
-	init->TotalHeigh = init->AccumulatedActiveH + VIDEO_MODE_V_FRONTPORCH;
-
-	if (HAL_LTDC_Init(&hltdc) != HAL_OK)
-	{
-		Error_Handler();
-	}
-
-	pLayerCfg.PixelFormat = LTDC_PIXEL_FORMAT_L8;
-	pLayerCfg.Alpha = 0xff;
-	pLayerCfg.Alpha0 = 0xff;
-	pLayerCfg.BlendingFactor1 = LTDC_BLENDING_FACTOR1_CA;
-	pLayerCfg.BlendingFactor2 = LTDC_BLENDING_FACTOR2_PAxCA;
-
-	uint32_t argb = L8Clut[BORDER_COLOR];
-	pLayerCfg.Backcolor.Blue = argb & 0xFF;
-	pLayerCfg.Backcolor.Green = (argb >> 8) & 0xFF;
-	pLayerCfg.Backcolor.Red = (argb >> 16) & 0xFF;
-
-	pLayerCfg.WindowX0 = (VIDEO_MODE_H_WIDTH - H_SIZE) / 2;
-	pLayerCfg.WindowX1 = pLayerCfg.WindowX0 + H_SIZE - 1;
-	pLayerCfg.WindowY0 = (VIDEO_MODE_V_HEIGHT - V_SIZE) / 2;
-	pLayerCfg.WindowY1 = pLayerCfg.WindowY0 + V_SIZE - 1;
-	pLayerCfg.ImageWidth = H_SIZE;
-	pLayerCfg.ImageHeight = V_SIZE;
-	pLayerCfg.FBStartAdress = (uint32_t)VideoRam;
-
-	if (HAL_LTDC_ConfigLayer(&hltdc, &pLayerCfg, 0) != HAL_OK)
-	{
-		Error_Handler();
-	}
-
-	HAL_LTDC_MspInit(&hltdc);
-
-	// Pixel clock
-	RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
-	PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_LTDC;
-	PeriphClkInitStruct.PLL3.PLL3P = 2;
-	PeriphClkInitStruct.PLL3.PLL3Q = 2;
-	PeriphClkInitStruct.PLL3.PLL3FRACN = 0;
-	PeriphClkInitStruct.PLL3.PLL3VCOSEL = RCC_PLL3VCOWIDE;
-
-	PeriphClkInitStruct.PLL3.PLL3M = VIDEO_MODE_PLL3M;
-	PeriphClkInitStruct.PLL3.PLL3N = VIDEO_MODE_PLL3N;
-	PeriphClkInitStruct.PLL3.PLL3R = VIDEO_MODE_PLL3R;
-	PeriphClkInitStruct.PLL3.PLL3RGE = VIDEO_MODE_PLL3RGE;
-
-	if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
-	{
-		Error_Handler();
-	}
-
-	HAL_LTDC_ConfigCLUT(&hltdc, L8Clut, 256, LTDC_LAYER_1);
-	HAL_LTDC_EnableCLUT(&hltdc, LTDC_LAYER_1);
 }
