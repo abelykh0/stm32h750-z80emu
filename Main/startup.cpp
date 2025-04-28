@@ -7,8 +7,9 @@
 #include "usbh_hid.h"
 #include "fatfs.h"
 
-#include "vga.h"
 #include "w25qxx_qspi.h"
+#include "vga.h"
+#include "resources.h"
 #include "config.h"
 #include "emulator.h"
 #include "sdcard.h"
@@ -51,12 +52,13 @@ extern "C" void setup()
 
 	HAL_TIM_Base_Start_IT(&htim7);
 
-	videoRam.ShowScreenshot((uint8_t*)QSPI_BASE);
+	videoRam.ShowScreenshot(spectrumKeyboard);
 	//zx_setup();
 }
 
 extern "C" void loop()
 {
+	return;
 	if (loadSnapshotLoop())
 	{
 		return;
