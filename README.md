@@ -1,4 +1,4 @@
-# stm32h7ltdc
+# stm32h750-z80emu
 
 Hardware: [WeAct STM32H750VBT6](https://deepbluembedded.com/stm32h750-development-board-pinout-schematic-datasheet/).
 
