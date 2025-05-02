@@ -1,7 +1,7 @@
 #include "z80input.h"
 #include "usbh_hid.h"
 
-uint8_t indata[128];
+uint8_t indata[128] __attribute__(( section(".sram2") ));
 
 enum {
 	ZX_KEY_SHIFT = 0,

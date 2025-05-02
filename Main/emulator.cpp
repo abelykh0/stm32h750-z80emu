@@ -14,8 +14,8 @@
 
 extern RTC_HandleTypeDef hrtc;
 
-uint8_t _buffer16K_1[0x4000];
-uint8_t _buffer16K_2[0x4000];
+uint8_t _buffer16K_1[0x4000] __attribute__(( section(".sram2") ));
+uint8_t _buffer16K_2[0x4000] __attribute__(( section(".sram2") ));
 static uint8_t* _savedScreenData = &_buffer16K_2[0x2100];
 
 z80::SpectrumScreen MainScreen;

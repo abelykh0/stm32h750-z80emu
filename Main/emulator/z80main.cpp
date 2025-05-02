@@ -15,7 +15,7 @@
 #define RAM_AVAILABLE 0xC000
 
 //Sound::Ay3_8912_state _ay3_8912;
-uint8_t RamBuffer[RAM_AVAILABLE];
+uint8_t RamBuffer[RAM_AVAILABLE] __attribute__(( section(".sram2") ));
 Z80_STATE _zxCpu;
 
 static CONTEXT _zxContext;

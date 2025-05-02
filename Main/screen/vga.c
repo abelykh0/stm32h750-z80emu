@@ -26,7 +26,6 @@ void PrepareClut()
 	for (uint32_t i = 0; i < 256; i++)
 	{
 		// xxBBGGRR > ARBG
-		uint32_t a = 0xff000000;
 
 		// R
 		uint32_t paletteR = i & 0x0003;
@@ -40,7 +39,7 @@ void PrepareClut()
 		uint32_t paletteB = (i & 0x0030) >> 4;
 		uint32_t b = Convert2BitColor(paletteB);
 
-		L8Clut[i] = a | r | g | b;
+		L8Clut[i] = 0xff000000 | r | g | b;
 	}
 }
 

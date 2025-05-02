@@ -1,7 +1,7 @@
 #include <screen/screen.h>
 #include <string.h>
 
-uint8_t VideoRam[H_SIZE * V_SIZE] __attribute__(( section(".sram2") ));
+uint8_t VideoRam[H_SIZE * V_SIZE];
 
 namespace Display
 {

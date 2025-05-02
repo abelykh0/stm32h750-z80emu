@@ -29,7 +29,7 @@ extern "C" void initialize()
 
 extern "C" void setup()
 {
-	MapFlash();
+	//MapFlash();
 /*
 	if (f_mount(&SDFatFS, SDPath, 1) == FR_OK)
 	{
