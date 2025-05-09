@@ -2,8 +2,8 @@
 #define __CONFIG_H
 
 // Visible screen area (without borders)
-#define H_SIZE 320 //720
-#define V_SIZE 480 //400
+#define H_SIZE 720 // 320
+#define V_SIZE 400 // 480
 #define TEXT_COLUMNS (H_SIZE / 8)
 #define TEXT_ROWS (V_SIZE / 8)
 #define BORDER_COLOR 0x30 // ..BBGGRR
@@ -11,8 +11,8 @@ extern uint8_t VideoRam[H_SIZE * V_SIZE];
 
 // Wide modes
 //#define VIDEO_MODE_640x400 // 250 K
-//#define VIDEO_MODE_720x400 // 281.3 K
-#define VIDEO_MODE_848x480 // 397.5 K
+#define VIDEO_MODE_720x400 // 281.3 K
+//#define VIDEO_MODE_848x480 // 397.5 K
 //#define VIDEO_MODE_1280x720
 //#define VIDEO_MODE_1600x900
 //#define VIDEO_MODE_1920x1080

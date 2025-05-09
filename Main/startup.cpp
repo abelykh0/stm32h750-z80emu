@@ -17,6 +17,7 @@
 #include "emulator/z80main.h"
 #include "emulator/z80input.h"
 #include "keyboard/keyboard.h"
+#include "demo_colors/gradient.h"
 
 Display::Screen fullScreen;
 
@@ -43,16 +44,18 @@ extern "C" void setup()
 
 		f_mount(nullptr, nullptr, 1);
 	}
-
-	//gradient(VideoRam, L8Clut);
 */
+	gradient(VideoRam, L8Clut);
+
 	LtdcInit();
 
-	fullScreen.Clear();
+	//fullScreen.Clear();
 
 	HAL_TIM_Base_Start_IT(&htim7);
 
-	videoRam.ShowScreenshot(spectrumKeyboard);
+
+
+	//videoRam.ShowScreenshot(spectrumKeyboard);
 	//zx_setup();
 }
 
