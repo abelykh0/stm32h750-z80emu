@@ -17,25 +17,29 @@
 #include "emulator/z80main.h"
 #include "emulator/z80input.h"
 #include "keyboard/keyboard.h"
+
 #include "demo_colors/gradient.h"
+#include "demo_colors/display_bmp.h"
 
 Display::Screen fullScreen;
+extern USBH_HandleTypeDef hUsbHostFS;
 
 static void MapFlash();
 
 extern "C" void initialize()
 {
 	PrepareClut();
+	HAL_PWREx_EnableUSBVoltageDetector();
 }
 
 extern "C" void setup()
 {
-	//MapFlash();
-/*
+	MapFlash();
+
 	if (f_mount(&SDFatFS, SDPath, 1) == FR_OK)
 	{
 		FIL file;
-		if (f_open(&file, u8"/Squirrel720x400.bmp", FA_READ) == FR_OK)
+		if (f_open(&file, (TCHAR*)u8"/Squirrel720x400.bmp", FA_READ) == FR_OK)
 		{
 			load_bmp_image(&file, VideoRam, L8Clut);
 
@@ -44,13 +48,15 @@ extern "C" void setup()
 
 		f_mount(nullptr, nullptr, 1);
 	}
-*/
-	gradient(VideoRam, L8Clut);
+
+	//gradient(VideoRam, L8Clut);
 
 	LtdcInit();
 
 	//fullScreen.Clear();
-
+	HAL_Delay(100);
+	USBH_LL_Connect(&hUsbHostFS);
+	NVIC_SetPendingIRQ(OTG_FS_IRQn);
 	HAL_TIM_Base_Start_IT(&htim7);
 
 
@@ -61,6 +67,7 @@ extern "C" void setup()
 
 extern "C" void loop()
 {
+	//MX_USB_HOST_Process();
 	return;
 	if (loadSnapshotLoop())
 	{
