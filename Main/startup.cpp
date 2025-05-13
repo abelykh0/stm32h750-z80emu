@@ -22,7 +22,7 @@
 #include "demo_colors/display_bmp.h"
 
 Display::Screen fullScreen;
-extern USBH_HandleTypeDef hUsbHostFS;
+extern USBH_HandleTypeDef hUsbHostHS;
 
 static void MapFlash();
 
@@ -54,9 +54,9 @@ extern "C" void setup()
 	LtdcInit();
 
 	//fullScreen.Clear();
-	HAL_Delay(100);
-	USBH_LL_Connect(&hUsbHostFS);
-	NVIC_SetPendingIRQ(OTG_FS_IRQn);
+	//HAL_Delay(100);
+	USBH_LL_Connect(&hUsbHostHS);
+	//NVIC_SetPendingIRQ(OTG_FS_IRQn);
 	HAL_TIM_Base_Start_IT(&htim7);
 
 
