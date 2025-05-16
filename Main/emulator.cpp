@@ -8,7 +8,7 @@
 #include "emulator/z80main.h"
 #include "emulator/z80snapshot.h"
 #include "emulator/z80emu/z80emu.h"
-#include "keyboard/keyboard.h"
+#include "keyboard/ps2keyboard.h"
 
 #define DEBUG_BAND_HEIGHT (DEBUG_ROWS * 8 * 2)
 
@@ -65,7 +65,7 @@ bool showKeyboardLoop()
 		return false;
 	}
 
-	int8_t scanCode = GetScanCode(true);
+	int8_t scanCode = Ps2_GetScancode();
 	if (scanCode == 0)
 	{
 		return true;

@@ -25,12 +25,12 @@
 #include "rtc.h"
 #include "sdmmc.h"
 #include "tim.h"
-#include "usb_host.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "startup.h"
+#include "keyboard/ps2keyboard.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -57,8 +57,6 @@
 void SystemClock_Config(void);
 void PeriphCommonClock_Config(void);
 static void MPU_Config(void);
-void MX_USB_HOST_Process(void);
-
 /* USER CODE BEGIN PFP */
 /* USER CODE END PFP */
 
@@ -113,7 +111,6 @@ int main(void)
   MX_FATFS_Init();
   MX_JPEG_Init();
   MX_TIM7_Init();
-  MX_USB_HOST_Init();
   /* USER CODE BEGIN 2 */
   setup();
   /* USER CODE END 2 */
@@ -125,7 +122,6 @@ int main(void)
 	loop();
 	continue;
     /* USER CODE END WHILE */
-    MX_USB_HOST_Process();
 
     /* USER CODE BEGIN 3 */
   }
@@ -159,11 +155,9 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48|RCC_OSCILLATORTYPE_HSE
-                              |RCC_OSCILLATORTYPE_LSE;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE|RCC_OSCILLATORTYPE_LSE;
   RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.LSEState = RCC_LSE_ON;
-  RCC_OscInitStruct.HSI48State = RCC_HSI48_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLM = 5;
@@ -277,7 +271,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   /* USER CODE BEGIN Callback 1 */
   if (htim->Instance == TIM7)
   {
-	  MX_USB_HOST_Process();
+	  //MX_USB_HOST_Process();
+	  PS2_PROCESS();
   }
   /* USER CODE END Callback 1 */
 }

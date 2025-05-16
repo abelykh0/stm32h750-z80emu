@@ -1,5 +1,6 @@
 #include "z80input.h"
-#include "usbh_hid.h"
+//#include "usbh_hid.h"
+#include "keyboard/ps2keyboard.h"
 
 uint8_t indata[128] __attribute__(( section(".sram2") ));
 
@@ -79,7 +80,7 @@ const uint8_t keybuf[ZX_KEY_LAST] = {
 
 #define ON_KEY(k) indata[keyaddr[k] - 0x7F] &= ~keybuf[k]
 
-bool OnKey(uint8_t scanCode)
+bool OnKey(int32_t scanCode)
 {
 	switch (scanCode)
 	{

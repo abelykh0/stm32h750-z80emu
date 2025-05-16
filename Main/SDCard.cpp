@@ -2,13 +2,13 @@
 #include <ctype.h>
 #include <stdlib.h>
 
-#include "usbh_hid.h"
-#include "usb_host.h"
+//#include "usbh_hid.h"
+//#include "usb_host.h"
 
 #include "SDCard.h"
 #include "screen.h"
 #include "emulator.h"
-#include "keyboard/keyboard.h"
+#include "keyboard/ps2keyboard.h"
 #include "emulator/z80snapshot.h"
 
 #define FILE_COLUMNS 3
@@ -214,7 +214,7 @@ bool saveSnapshotLoop()
 		return false;
 	}
 
-	int8_t scanCode = GetScanCode(true);
+	int32_t scanCode = Ps2_GetScancode();
 	if (scanCode == 0)
 	{
 		return true;
@@ -259,7 +259,7 @@ bool saveSnapshotLoop()
 		return false;
 
 	default:
-		char character = GetAsciiCode();
+		char character = Ps2_ConvertScancode(scanCode);
 		if (DebugScreen._cursor_x < FILE_COLUMNWIDTH && character != '\0'
 			&& character != '\\' && character != '/' && character != ':'
 			&& character != '*' && character != '?' && character != '"'
@@ -362,7 +362,7 @@ bool loadSnapshotLoop()
 		return false;
 	}
 
-	int8_t scanCode = GetScanCode(true);
+	int32_t scanCode = Ps2_GetScancode();
 	if (scanCode == 0)
 	{
 		return true;

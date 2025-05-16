@@ -3,8 +3,8 @@
 
 #include "gpio.h"
 #include "tim.h"
-#include "usb_host.h"
-#include "usbh_hid.h"
+//#include "usb_host.h"
+//#include "usbh_hid.h"
 #include "fatfs.h"
 
 #include "w25qxx_qspi.h"
@@ -16,13 +16,13 @@
 #include "emulator/videoRam.h"
 #include "emulator/z80main.h"
 #include "emulator/z80input.h"
-#include "keyboard/keyboard.h"
+#include "keyboard/ps2Keyboard.h"
 
 #include "demo_colors/gradient.h"
 #include "demo_colors/display_bmp.h"
 
 Display::Screen fullScreen;
-extern USBH_HandleTypeDef hUsbHostHS;
+//extern USBH_HandleTypeDef hUsbHostHS;
 
 static void MapFlash();
 
@@ -54,10 +54,8 @@ extern "C" void setup()
 	LtdcInit();
 
 	//fullScreen.Clear();
-	//HAL_Delay(100);
-	USBH_LL_Connect(&hUsbHostHS);
-	//NVIC_SetPendingIRQ(OTG_FS_IRQn);
-	HAL_TIM_Base_Start_IT(&htim7);
+
+	//HAL_TIM_Base_Start_IT(&htim7);
 
 
 
@@ -85,7 +83,7 @@ extern "C" void loop()
 	}
 
 	zx_loop();
-	int8_t result = GetScanCode(false);
+	int8_t result = Ps2_GetScancode();
 	switch (result)
 	{
 	case KEY_ESCAPE:
