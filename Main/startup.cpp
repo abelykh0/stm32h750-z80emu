@@ -55,18 +55,18 @@ extern "C" void setup()
 
 	//fullScreen.Clear();
 
+
+	Ps2_Initialize();
 	//HAL_TIM_Base_Start_IT(&htim7);
 
 
 
 	//videoRam.ShowScreenshot(spectrumKeyboard);
-	//zx_setup();
+	zx_setup();
 }
 
 extern "C" void loop()
 {
-	//MX_USB_HOST_Process();
-	return;
 	if (loadSnapshotLoop())
 	{
 		return;

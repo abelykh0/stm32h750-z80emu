@@ -3,6 +3,7 @@
 #include <keyboard/queue.h>
 
 #include "stm32h7xx_hal.h"
+#include "tim.h"
 
 typedef enum
 {
@@ -37,13 +38,15 @@ void Ps2_Initialize()
     // CLK pin
     GPIO_InitStruct.Pin = CLK_PIN;
     GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
     // DATA pin
     GPIO_InitStruct.Pin = DATA_PIN;
     GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
     ps2_status = IDLE;
@@ -51,6 +54,8 @@ void Ps2_Initialize()
     kb_data = 0;
     _isLeftShiftPressed = false;
     _isRightShiftPressed = false;
+
+	HAL_TIM_Base_Start_IT(&htim7);
 }
 
 int32_t Ps2_GetScancode()
