@@ -6,7 +6,6 @@ static uint32_t QSPI_ResetDevice(QSPI_HandleTypeDef *hqspi);
 static uint8_t QSPI_EnterQPI(QSPI_HandleTypeDef *hqspi);
 static uint32_t QSPI_AutoPollingMemReady(QSPI_HandleTypeDef *hqspi, uint32_t Timeout);
 static uint32_t QSPI_WriteEnable(QSPI_HandleTypeDef *hqspi);
-static uint32_t QSPI_EnterFourBytesAddress(QSPI_HandleTypeDef *hqspi);
 
 static uint8_t QSPI_Send_CMD(QSPI_HandleTypeDef *hqspi,uint32_t instruction, uint32_t address,uint32_t addressSize,uint32_t dummyCycles, 
                     uint32_t instructionMode,uint32_t addressMode, uint32_t dataMode, uint32_t dataSize);
@@ -528,47 +527,6 @@ static uint8_t QSPI_Send_CMD(QSPI_HandleTypeDef *hqspi,uint32_t instruction, uin
       return w25qxx_ERROR;
 
     return w25qxx_OK;
-}
-
-/**
-  * @brief  This function set the QSPI memory in 4-byte address mode
-  * @param  hqspi: QSPI handle
-  * @retval None
-  */
-static uint32_t QSPI_EnterFourBytesAddress(QSPI_HandleTypeDef *hqspi)
-{
-  QSPI_CommandTypeDef s_command;
-
-  /* Initialize the command */
-  s_command.InstructionMode   = QSPI_INSTRUCTION_4_LINES;
-  s_command.Instruction       = W25X_Enable4ByteAddr;
-  s_command.AddressMode       = QSPI_ADDRESS_NONE;
-  s_command.AlternateByteMode = QSPI_ALTERNATE_BYTES_NONE;
-  s_command.DataMode          = QSPI_DATA_NONE;
-  s_command.DummyCycles       = 0;
-  s_command.DdrMode           = QSPI_DDR_MODE_DISABLE;
-  s_command.DdrHoldHalfCycle  = QSPI_DDR_HHC_ANALOG_DELAY;
-  s_command.SIOOMode          = QSPI_SIOO_INST_EVERY_CMD;
-
-  /* Enable write operations */
-  if (QSPI_WriteEnable(hqspi) != w25qxx_OK)
-  {
-    return w25qxx_ERROR;
-  }
-
-  /* Send the command */
-  if (HAL_QSPI_Command(hqspi, &s_command, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != HAL_OK)
-  {
-    return w25qxx_ERROR;
-  }
-
-  /* Configure automatic polling mode to wait the memory is ready */
-  if (QSPI_AutoPollingMemReady(hqspi, HAL_QPSI_TIMEOUT_DEFAULT_VALUE) != w25qxx_OK)
-  {
-    return w25qxx_ERROR;
-  }
-
-  return w25qxx_OK;
 }
 
 /**
