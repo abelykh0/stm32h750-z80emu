@@ -65,7 +65,7 @@ bool showKeyboardLoop()
 		return false;
 	}
 
-	int8_t scanCode = Ps2_GetScancode();
+	int32_t scanCode = Ps2_GetScancode();
 	if (scanCode == 0)
 	{
 		return true;

@@ -279,7 +279,7 @@ bool OnKey(int32_t scanCode)
 		ON_KEY(ZX_KEY_6, isKeyUp);
 		break;
     default:
-        return false;
+        return isKeyUp;
 	}
 
     return true;

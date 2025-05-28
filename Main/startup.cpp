@@ -35,7 +35,7 @@ extern "C" void initialize()
 extern "C" void setup()
 {
 	MapFlash();
-
+/*
 	if (f_mount(&SDFatFS, SDPath, 1) == FR_OK)
 	{
 		FIL file;
@@ -50,18 +50,12 @@ extern "C" void setup()
 	}
 
 	//gradient(VideoRam, L8Clut);
-
+*/
 	LtdcInit();
 
-	//fullScreen.Clear();
-
+	fullScreen.Clear();
 
 	Ps2_Initialize();
-	//HAL_TIM_Base_Start_IT(&htim7);
-
-
-
-	//videoRam.ShowScreenshot(spectrumKeyboard);
 	zx_setup();
 }
 
@@ -82,8 +76,7 @@ extern "C" void loop()
 		return;
 	}
 
-	zx_loop();
-	int8_t result = Ps2_GetScancode();
+	int32_t result = zx_loop();
 	switch (result)
 	{
 	case KEY_ESCAPE:

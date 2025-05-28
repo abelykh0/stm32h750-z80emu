@@ -111,23 +111,12 @@
 #define KEY_PGDN     0xE07A
 #define KEY_LEFTARROW 0xE06B
 #define KEY_RIGHTARROW 0xE074
-#define KEY_UPARROW 0xE075
+#define KEY_UPARROW  0xE075
 #define KEY_DOWNARROW 0xE072
 #define KEY_INSERT   0xE070
 #define KEY_DELETE   0xE071
 #define KEY_KEYPAD_ENTER 0xE05A
 #define KEY_KEYPAD_SLASH 0xE04A
-#define KEY_NEXT_TR  0XE04D
-#define KEY_PREV_TR  0XE015
-#define KEY_STOP     0XE038
-#define KEY_PLAY     0XE034
-#define KEY_MUTE     0XE023
-#define KEY_VOL_UP   0XE032
-#define KEY_VOL_DN   0XE021
-#define KEY_MEDIA    0XE050
-#define KEY_EMAIL    0XE048
-#define KEY_CALC     0XE02B
-#define KEY_COMPUTER 0XE040
 
 #ifdef __cplusplus
 extern "C" {

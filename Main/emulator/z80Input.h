@@ -4,6 +4,6 @@
 #include <stdint.h>
 
 extern uint8_t indata[128];
-bool OnKey(uint8_t scanCode);
+bool OnKey(int32_t scanCode);
 
 #endif

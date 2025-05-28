@@ -9,6 +9,7 @@
 #include "z80input.h"
 #include "resources.h"
 #include "emulator.h"
+#include "keyboard/ps2Keyboard.h"
 
 //#define BEEPER
 #define CYCLES_PER_STEP 69888
@@ -82,6 +83,16 @@ int32_t zx_loop()
         {
             frames = 0;
         	MainScreen.Flash(&videoRam);
+        }
+
+        // Keyboard input
+        int32_t scanCode = Ps2_GetScancode();
+        if (scanCode > 0)
+        {
+            if (!OnKey(scanCode))
+            {
+                result = scanCode;
+            }
         }
 
         Z80Interrupt(&_zxCpu, 0xff, &_zxContext);
