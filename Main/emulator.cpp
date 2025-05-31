@@ -18,7 +18,7 @@ uint8_t _buffer16K_1[0x4000] __attribute__(( section(".sram2") ));
 uint8_t _buffer16K_2[0x4000] __attribute__(( section(".sram2") ));
 static uint8_t* _savedScreenData = &_buffer16K_2[0x2100];
 
-z80::SpectrumScreen MainScreen;
+z80::SpectrumScreen MainScreen(144, 2); // xOffset = (800 - (256 * 2)) / 2
 z80::VideoRam videoRam(&MainScreen);
 Display::Screen DebugScreen(0, SCREEN_Y_OFFSET, H_SIZE, V_SIZE - SCREEN_Y_OFFSET);
 
@@ -66,7 +66,7 @@ bool showKeyboardLoop()
 	}
 
 	int32_t scanCode = Ps2_GetScancode();
-	if (scanCode == 0)
+	if (scanCode <= 0)
 	{
 		return true;
 	}

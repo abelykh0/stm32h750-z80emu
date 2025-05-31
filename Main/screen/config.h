@@ -2,8 +2,8 @@
 #define __CONFIG_H
 
 // Visible screen area (without borders)
-#define H_SIZE 320
-#define V_SIZE 480
+#define H_SIZE 800
+#define V_SIZE 600
 #define TEXT_COLUMNS (H_SIZE / 8)
 #define TEXT_ROWS (V_SIZE / 8)
 #define BORDER_COLOR 0x30 // ..BBGGRR

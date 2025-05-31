@@ -4,9 +4,10 @@
 namespace z80
 {
 
-SpectrumScreen::SpectrumScreen()
-	: Screen(32, 32, WIDTH, HEIGHT)
+SpectrumScreen::SpectrumScreen(uint16_t xOffset, uint8_t scale)
+	: Screen(xOffset, 32, WIDTH, HEIGHT)
 {
+	this->_scale = scale;
 	this->_borderColor = 0;
 	this->_flashOn = false;
 }
@@ -43,7 +44,22 @@ void SpectrumScreen::Update8Pixels(VideoRam* videoRam, uint16_t address)
         	color = backgroundColor;
         }
 
-		this->SetPixel(character * 8 + i, y, color);
+        switch (this->_scale)
+        {
+        case 2:
+			{
+				uint16_t realX = (character * 8 + i) * 2;
+				uint16_t realY = y * 2;
+				this->SetPixel(realX, realY, color);
+				this->SetPixel(realX + 1, realY, color);
+				this->SetPixel(realX, realY + 1, color);
+				this->SetPixel(realX + 1, realY + 1, color);
+			}
+    		break;
+        default:
+    		this->SetPixel(character * 8 + i, y, color);
+    		break;
+        }
 	}
 }
 
@@ -179,28 +195,28 @@ void SpectrumScreen::WriteBorderColor(uint8_t color)
 
 	for (uint16_t y = 0; y < this->_yOffset; y++)
 	{
-		for (uint16_t x = 0; x < H_SIZE; x++)
+		for (uint16_t x = 0; x < H_SIZE * this->_scale; x++)
 		{
 			this->SetPixelNoOffset(x, y, convertedColor);
 		}
 	}
 
-	for (uint16_t y = this->_yOffset; y < this->_yOffset + HEIGHT; y++)
+	for (uint16_t y = this->_yOffset; y < this->_yOffset + (HEIGHT * this->_scale); y++)
 	{
 		for (uint16_t x = 0; x < this->_xOffset; x++)
 		{
 			this->SetPixelNoOffset(x, y, convertedColor);
 		}
 
-		for (uint16_t x = this->_xOffset + WIDTH; x < H_SIZE; x++)
+		for (uint16_t x = this->_xOffset + (WIDTH * this->_scale); x < H_SIZE * this->_scale; x++)
 		{
 			this->SetPixelNoOffset(x, y, convertedColor);
 		}
 	}
 
-	for (uint16_t y = this->_yOffset + HEIGHT; y < (this->_yOffset * 2) + HEIGHT; y++)
+	for (uint16_t y = this->_yOffset + (HEIGHT * this->_scale); y < (this->_yOffset * 2) + (HEIGHT * this->_scale); y++)
 	{
-		for (uint16_t x = 0; x < H_SIZE; x++)
+		for (uint16_t x = 0; x < H_SIZE * this->_scale; x++)
 		{
 			this->SetPixelNoOffset(x, y, convertedColor);
 		}

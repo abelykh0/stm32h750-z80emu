@@ -215,7 +215,7 @@ bool saveSnapshotLoop()
 	}
 
 	int32_t scanCode = Ps2_GetScancode();
-	if (scanCode == 0)
+	if (scanCode <= 0)
 	{
 		return true;
 	}
@@ -363,7 +363,7 @@ bool loadSnapshotLoop()
 	}
 
 	int32_t scanCode = Ps2_GetScancode();
-	if (scanCode == 0)
+	if (scanCode <= 0)
 	{
 		return true;
 	}

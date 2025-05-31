@@ -18,9 +18,10 @@ private:
 	uint16_t GetPixelsOffset(uint16_t line, uint8_t character);
 	uint8_t _borderColor;
 	bool _flashOn;
+	uint8_t _scale;
 
 public:
-	SpectrumScreen();
+	SpectrumScreen(uint16_t xOffset, uint8_t scale);
 
 	void Update(VideoRam* videoRam, uint16_t address);
 
