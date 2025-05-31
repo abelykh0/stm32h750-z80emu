@@ -6,6 +6,7 @@
 #include "emulator.h"
 #include "emulator/z80main.h"
 #include "emulator/z80emu/z80emu.h"
+#include "emulator/z80input.h"
 #include "emulator/SpectrumScreen.h"
 
 /*
@@ -318,6 +319,7 @@ bool z80::LoadZ80Snapshot(FIL* file, uint8_t buffer1[0x4000], uint8_t buffer2[0x
 
 	} while (pageSize > 0);
 
+    memset(indata, 0xFF, 128);
 	return true;
 }
 

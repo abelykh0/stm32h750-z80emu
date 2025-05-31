@@ -195,7 +195,7 @@ void SpectrumScreen::WriteBorderColor(uint8_t color)
 
 	for (uint16_t y = 0; y < this->_yOffset; y++)
 	{
-		for (uint16_t x = 0; x < H_SIZE * this->_scale; x++)
+		for (uint16_t x = 0; x < H_SIZE; x++)
 		{
 			this->SetPixelNoOffset(x, y, convertedColor);
 		}
@@ -208,7 +208,7 @@ void SpectrumScreen::WriteBorderColor(uint8_t color)
 			this->SetPixelNoOffset(x, y, convertedColor);
 		}
 
-		for (uint16_t x = this->_xOffset + (WIDTH * this->_scale); x < H_SIZE * this->_scale; x++)
+		for (uint16_t x = this->_xOffset + (WIDTH * this->_scale); x < H_SIZE; x++)
 		{
 			this->SetPixelNoOffset(x, y, convertedColor);
 		}
@@ -216,7 +216,7 @@ void SpectrumScreen::WriteBorderColor(uint8_t color)
 
 	for (uint16_t y = this->_yOffset + (HEIGHT * this->_scale); y < (this->_yOffset * 2) + (HEIGHT * this->_scale); y++)
 	{
-		for (uint16_t x = 0; x < H_SIZE * this->_scale; x++)
+		for (uint16_t x = 0; x < H_SIZE; x++)
 		{
 			this->SetPixelNoOffset(x, y, convertedColor);
 		}

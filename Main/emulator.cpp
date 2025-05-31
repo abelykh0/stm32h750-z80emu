@@ -66,7 +66,7 @@ bool showKeyboardLoop()
 	}
 
 	int32_t scanCode = Ps2_GetScancode();
-	if (scanCode <= 0)
+	if (scanCode <= 0 || (scanCode & 0xFF00) != 0xF000)
 	{
 		return true;
 	}
