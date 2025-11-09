@@ -11,6 +11,7 @@
 #include "vga.h"
 #include "resources.h"
 #include "config.h"
+#include "usbd_video_conf.h"
 #include "emulator.h"
 #include "sdcard.h"
 #include "emulator/videoRam.h"
@@ -22,6 +23,8 @@
 #include "demo_colors/display_bmp.h"
 
 Display::Screen fullScreen;
+extern JPEG_HandleTypeDef hjpeg;
+
 //extern USBH_HandleTypeDef hUsbHostHS;
 
 static void MapFlash();
@@ -35,6 +38,15 @@ extern "C" void initialize()
 extern "C" void setup()
 {
 	MapFlash();
+
+	JPEG_ConfTypeDef config;
+	config.ImageWidth = UVC_WIDTH;
+	config.ImageHeight = UVC_HEIGHT;
+	config.ColorSpace = JPEG_YCBCR_COLORSPACE;
+	config.ChromaSubsampling = JPEG_444_SUBSAMPLING;
+	config.ImageQuality = 90;
+	HAL_JPEG_ConfigEncoding(&hjpeg, &config);
+
 /*
 	if (f_mount(&SDFatFS, SDPath, 1) == FR_OK)
 	{
