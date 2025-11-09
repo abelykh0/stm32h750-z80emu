@@ -1,5 +1,5 @@
-#ifndef _SCREEN_H
-#define _SCREEN_H
+#ifndef _CAMERA_SCREEN_H
+#define _CAMERA_SCREEN_H
 
 #include "stdint.h"
 #include "resources.h"
@@ -8,7 +8,7 @@
 namespace Camera
 {
 
-class Screen
+class CameraScreen
 {
 private:
     void PrintChar(char c, uint16_t color);
@@ -31,7 +31,7 @@ protected:
     uint16_t _attribute = 0x3F01; // white on blue
 
 public:
-	Screen();
+    CameraScreen();
     uint8_t _cursor_x = 0;
     uint8_t _cursor_y = 0;
     uint16_t _pixelCount;
@@ -50,7 +50,7 @@ public:
 	void PrintAlignCenter(uint8_t y, const char *str);
     void PrintCharAt(uint8_t x, uint8_t y, unsigned char c);
 
-	virtual ~Screen() = default;
+	virtual ~CameraScreen() = default;
 };
 
 }

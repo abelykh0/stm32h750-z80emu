@@ -60,8 +60,8 @@
 #define CHUNK_SIZE (sizeof(canvas) / 5)
 static uint8_t* mdmaInput;
 static uint8_t* mdmaOutput;
-static uint8_t outbytes0[UVC_WIDTH * UVC_HEIGHT];
-static uint8_t outbytes1[UVC_WIDTH * UVC_HEIGHT];
+static uint8_t outbytes0[UVC_WIDTH * UVC_HEIGHT] __attribute__(( section(".sram2") ));
+static uint8_t outbytes1[UVC_WIDTH * UVC_HEIGHT] __attribute__(( section(".sram3") ));
 static uint8_t* write_pointer = outbytes0;
 static uint8_t* read_pointer = outbytes0;
 static uint32_t jpgLength = 0;

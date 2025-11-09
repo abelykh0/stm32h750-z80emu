@@ -1,3 +1,4 @@
+#include <camera/CameraScreen.h>
 #include "stm32h7xx_hal.h"
 #include <stdio.h>
 
@@ -7,11 +8,16 @@
 //#include "usbh_hid.h"
 #include "fatfs.h"
 
+#include "usbd_core.h"
+#include "usbd_desc.h"
+#include "usbd_video_if.h"
+
 #include "w25qxx_qspi.h"
 #include "vga.h"
 #include "resources.h"
 #include "config.h"
-#include "usbd_video_conf.h"
+#include "camera/CameraScreen.h"
+#include "screen.h"
 #include "emulator.h"
 #include "sdcard.h"
 #include "emulator/videoRam.h"
@@ -22,12 +28,18 @@
 #include "demo_colors/gradient.h"
 #include "demo_colors/display_bmp.h"
 
+Camera::CameraScreen cameraScreen;
 Display::Screen fullScreen;
+
+// Camera
 extern JPEG_HandleTypeDef hjpeg;
+extern PCD_HandleTypeDef hpcd_USB_OTG_FS;
+extern USBD_HandleTypeDef hUsbDeviceFS;
 
 //extern USBH_HandleTypeDef hUsbHostHS;
 
 static void MapFlash();
+static void USB_DEVICE_Init();
 
 extern "C" void initialize()
 {
@@ -39,6 +51,8 @@ extern "C" void setup()
 {
 	MapFlash();
 
+	// Camera
+	USB_DEVICE_Init();
 	JPEG_ConfTypeDef config;
 	config.ImageWidth = UVC_WIDTH;
 	config.ImageHeight = UVC_HEIGHT;
@@ -46,6 +60,10 @@ extern "C" void setup()
 	config.ChromaSubsampling = JPEG_444_SUBSAMPLING;
 	config.ImageQuality = 90;
 	HAL_JPEG_ConfigEncoding(&hjpeg, &config);
+
+	cameraScreen.SetAttribute(0x2A10);
+	cameraScreen.Clear();
+
 
 /*
 	if (f_mount(&SDFatFS, SDPath, 1) == FR_OK)
@@ -152,3 +170,30 @@ static void MapFlash()
 	w25qxx_EnterQPI();
 	w25qxx_Startup(w25qxx_NormalMode); // w25qxx_DTRMode
 }
+
+void USB_DEVICE_Init()
+{
+	  if (USBD_Init(&hUsbDeviceFS, &FS_Desc, DEVICE_FS) != USBD_OK)
+	  {
+	    Error_Handler();
+	  }
+
+	  // Defaults are 128, 64, 128 (320 total)
+	  HAL_PCDEx_SetRxFiFo(&hpcd_USB_OTG_FS,    48);
+	  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_FS, 0, 16);
+	  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_FS, 1, 256);
+
+	  if (USBD_RegisterClass(&hUsbDeviceFS, &USBD_VIDEO) != USBD_OK)
+	  {
+	    Error_Handler();
+	  }
+	  if (USBD_VIDEO_RegisterInterface(&hUsbDeviceFS, &USBD_VIDEO_fops_FS) != USBD_OK)
+	  {
+	    Error_Handler();
+	  }
+	  if (USBD_Start(&hUsbDeviceFS) != USBD_OK)
+	  {
+	    Error_Handler();
+	  }
+}
+

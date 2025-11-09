@@ -4,7 +4,6 @@
 #include "screen.h"
 #include "emulator/SpectrumScreen.h"
 #include "fatfs.h"
-#include "screen.h"
 
 // (192 + 32) * 2
 #define SCREEN_Y_OFFSET 448

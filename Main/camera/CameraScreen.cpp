@@ -1,31 +1,31 @@
-#include <camera/Screen.h>
+#include <camera/CameraScreen.h>
 #include "usbd_video_conf.h"
 #include <string.h>
 
 namespace Camera
 {
 
-Screen::Screen()
+CameraScreen::CameraScreen()
 {
 	this->_isCursorVisible = false;
 }
 
-void Screen::Clear()
+void CameraScreen::Clear()
 {
 	::Clear(this->_attribute);
 }
 
-void Screen::SetFont(const uint8_t* font)
+void CameraScreen::SetFont(const uint8_t* font)
 {
 	this->_font = (uint8_t*)font;
 }
 
-void Screen::SetAttribute(uint16_t attribute)
+void CameraScreen::SetAttribute(uint16_t attribute)
 {
 	this->_attribute = attribute;
 }
 
-void Screen::SetCursorPosition(uint8_t x, uint8_t y)
+void CameraScreen::SetCursorPosition(uint8_t x, uint8_t y)
 {
 	if (this->_cursor_x == x && this->_cursor_y == y)
 	{
@@ -56,7 +56,7 @@ void Screen::SetCursorPosition(uint8_t x, uint8_t y)
     }
 }
 
-void Screen::ShowCursor()
+void CameraScreen::ShowCursor()
 {
     if (!this->_isCursorVisible)
     {
@@ -65,7 +65,7 @@ void Screen::ShowCursor()
     }
 }
 
-void Screen::HideCursor()
+void CameraScreen::HideCursor()
 {
     if (this->_isCursorVisible)
     {
@@ -74,7 +74,7 @@ void Screen::HideCursor()
     }
 }
 
-void Screen::Print(const char* str)
+void CameraScreen::Print(const char* str)
 {
     if (this->_font == nullptr)
     {
@@ -87,25 +87,25 @@ void Screen::Print(const char* str)
     }
 }
 
-void Screen::PrintAt(uint8_t x, uint8_t y, const char* str)
+void CameraScreen::PrintAt(uint8_t x, uint8_t y, const char* str)
 {
     this->SetCursorPosition(x, y);
     this->Print(str);
 }
 
-void Screen::PrintAlignRight(uint8_t y, const char *str)
+void CameraScreen::PrintAlignRight(uint8_t y, const char *str)
 {
     uint8_t leftX = CAMERA_TEXT_COLUMNS - strlen(str);
     this->PrintAt(leftX, y, str);
 }
 
-void Screen::PrintAlignCenter(uint8_t y, const char *str)
+void CameraScreen::PrintAlignCenter(uint8_t y, const char *str)
 {
     uint8_t leftX = (CAMERA_TEXT_COLUMNS - strlen(str)) / 2;
     this->PrintAt(leftX, y, str);
 }
 
-void Screen::PrintChar(char c, uint16_t color)
+void CameraScreen::PrintChar(char c, uint16_t color)
 {
 	switch (c)
 	{
@@ -138,7 +138,7 @@ void Screen::PrintChar(char c, uint16_t color)
 	}
 }
 
-void Screen::DrawChar(const uint8_t* f, uint16_t x, uint16_t y, uint8_t c)
+void CameraScreen::DrawChar(const uint8_t* f, uint16_t x, uint16_t y, uint8_t c)
 {
 	if (c == 0)
 	{
@@ -168,18 +168,18 @@ void Screen::DrawChar(const uint8_t* f, uint16_t x, uint16_t y, uint8_t c)
     }
 }
 
-void Screen::PrintCharAt(uint8_t x, uint8_t y, unsigned char c, uint16_t color)
+void CameraScreen::PrintCharAt(uint8_t x, uint8_t y, unsigned char c, uint16_t color)
 {
 	this->_attribute = color;
 	this->DrawChar(this->_font, x, y, c);
 }
 
-void Screen::PrintCharAt(uint8_t x, uint8_t y, unsigned char c)
+void CameraScreen::PrintCharAt(uint8_t x, uint8_t y, unsigned char c)
 {
 	this->PrintCharAt(x, y, c, this->_attribute);
 }
 
-void Screen::CursorNext()
+void CameraScreen::CursorNext()
 {
 	uint8_t x = this->_cursor_x;
 	uint8_t y = this->_cursor_y;

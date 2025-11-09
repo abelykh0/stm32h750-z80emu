@@ -1,7 +1,7 @@
 #include "string.h"
 #include "camera/canvas.h"
 
-uint8_t canvas[] /*__attribute__(( section(".sram2") ))*/;
+uint8_t canvas[] __attribute__(( section(".sram2") ));
 static Mcu* canvasMcu = (Mcu*)canvas;
 
 // Y-Cb-Cr 64 color palette (indexed by BBGGRR)
