@@ -236,16 +236,7 @@ __ALIGN_BEGIN static uint8_t USBD_VIDEO_CfgDesc[] __ALIGN_END =
   VS_FORMAT_SUBTYPE,                             /* bDescriptorSubType */
   0x01,                                          /* bFormatIndex */
   0x01,                                          /* bNumFrameDescriptor */
-#ifdef USBD_UVC_FORMAT_UNCOMPRESSED
-  DBVAL(UVC_UNCOMPRESSED_GUID),                  /* Giud Format: YUY2 {32595559-0000-0010-8000-00AA00389B71} */
-  0x00, 0x00,
-  0x10, 0x00,
-  0x80, 0x00,
-  0x00, 0xAA, 0x00, 0x38, 0x9B, 0x71,
-  UVC_BITS_PER_PIXEL,                            /* bBitsPerPixel : Number of bits per pixel */
-#else
   0x01,                                          /* bmFlags: FixedSizeSamples */
-#endif /* USBD_UVC_FORMAT_UNCOMPRESSED */
   0x01,                                          /* bDefaultFrameIndex: default frame used is frame 1
                                                     (only one frame used) */
   0x00,                                          /* bAspectRatioX: not required by specification */
@@ -258,11 +249,7 @@ __ALIGN_BEGIN static uint8_t USBD_VIDEO_CfgDesc[] __ALIGN_END =
   CS_INTERFACE,                                  /* bDescriptorType */
   VS_FRAME_SUBTYPE,                              /* bDescriptorSubType */
   0x01,                                          /* bFrameIndex */
-#ifdef USBD_UVC_FORMAT_UNCOMPRESSED
-  0x00,                                          /* bmCapabilities: no till image capture */
-#else
   0x02,                                          /* bmCapabilities: fixed frame rate supported */
-#endif /* USBD_UVC_FORMAT_UNCOMPRESSED */
   WBVAL(UVC_WIDTH),                              /* wWidth: Image Frame Width */
   WBVAL(UVC_HEIGHT),                             /* wHeight: Image Frame Height */
   DBVAL(UVC_MIN_BIT_RATE(UVC_CAM_FPS_FS)),       /* dwMinBitRate: Minimum supported bit rate in bits/s  */
@@ -271,16 +258,6 @@ __ALIGN_BEGIN static uint8_t USBD_VIDEO_CfgDesc[] __ALIGN_END =
   DBVAL(UVC_INTERVAL(UVC_CAM_FPS_FS)),           /* dwDefaultFrameInterval: following number of FPS */
   0x01,                                          /* bFrameIntervalType: Discrete frame interval type */
   DBVAL(UVC_INTERVAL(UVC_CAM_FPS_FS)),           /* dwMinFrameInterval: One supported value of interval (FPS) */
-
-#ifdef USBD_UVC_FORMAT_UNCOMPRESSED
-  /* Color Matching Descriptor */
-  VS_COLOR_MATCHING_DESC_SIZE,                   /* bLength */
-  CS_INTERFACE,                                  /* bDescriptorType: CS_INTERFACE */
-  VS_COLORFORMAT,                                /* bDescriptorSubType: VS_COLORFORMAT */
-  UVC_COLOR_PRIMARIE,                            /* bColorPrimarie: 1: BT.709, sRGB (default) */
-  UVC_TFR_CHARACTERISTICS,                       /* bTransferCharacteristics: 1: BT.709 (default) */
-  UVC_MATRIX_COEFFICIENTS,                       /* bMatrixCoefficients: 4: BT.601, (default) */
-#endif /* USBD_UVC_FORMAT_UNCOMPRESSED */
 
   /* Standard VS Interface Descriptor  = interface 1, alternate setting 1 = data transfer mode  */
   USB_IF_DESC_SIZE,                              /* bLength */

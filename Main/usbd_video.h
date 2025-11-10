@@ -95,13 +95,6 @@ extern "C" {
 #define UVC_BITS_PER_PIXEL                            12U
 #endif /* UVC_BITS_PER_PIXEL */
 
-#define UVC_GUID_YUY2                                 0x32595559U
-#define UVC_GUID_NV12                                 0x3231564EU
-
-#ifndef UVC_UNCOMPRESSED_GUID
-#define UVC_UNCOMPRESSED_GUID                         UVC_GUID_NV12
-#endif /* UVC_UNCOMPRESSED_GUID */
-
 #define UVC_INTERVAL(n)                               (10000000U/(n))
 
 #define UVC_MIN_BIT_RATE(n)                           (UVC_WIDTH * UVC_HEIGHT * 16U * (n)) /* 16 bit */
@@ -127,11 +120,7 @@ extern "C" {
 #define UVC_VS_IF_NUM                                 0x01U
 #define UVC_TOTAL_IF_NUM                              0x02U
 
-#ifdef USBD_UVC_FORMAT_UNCOMPRESSED
-#define UVC_CONFIG_DESC_SIZ                           (0x88U + 0x16U)
-#else
 #define UVC_CONFIG_DESC_SIZ                           0x88U
-#endif /* USBD_UVC_FORMAT_UNCOMPRESSED */
 
 #define USBD_VC_GIUD_FORMAT_SIZE                      16U
 
@@ -167,17 +156,6 @@ extern "C" {
 #define VS_FORMAT_MJPEG_DESC_SIZE                     0x0BU
 #define VS_FRAME_DESC_SIZE                            0x1EU
 #define VS_COLOR_MATCHING_DESC_SIZE                   0x06U
-
-#ifdef USBD_UVC_FORMAT_UNCOMPRESSED
-#define VS_FORMAT_DESC_SIZE                           VS_FORMAT_UNCOMPRESSED_DESC_SIZE
-#define VS_FORMAT_SUBTYPE                             VS_FORMAT_UNCOMPRESSED
-#define VS_FRAME_SUBTYPE                              VS_FRAME_UNCOMPRESSED
-
-#define VC_HEADER_SIZE (VIDEO_VS_IF_IN_HEADER_DESC_SIZE + \
-                        VS_FORMAT_UNCOMPRESSED_DESC_SIZE + \
-                        VS_FRAME_DESC_SIZE + \
-                        VS_COLOR_MATCHING_DESC_SIZE)
-#else
 #define VS_FORMAT_DESC_SIZE                           VS_FORMAT_MJPEG_DESC_SIZE
 #define VS_FORMAT_SUBTYPE                             VS_FORMAT_MJPEG
 #define VS_FRAME_SUBTYPE                              VS_FRAME_MJPEG
@@ -185,7 +163,6 @@ extern "C" {
 #define VC_HEADER_SIZE (VIDEO_VS_IF_IN_HEADER_DESC_SIZE + \
                         VS_FORMAT_DESC_SIZE + \
                         VS_FRAME_DESC_SIZE)
-#endif /* USBD_UVC_FORMAT_UNCOMPRESSED */
 
 /*
  * Video Class specification release 1.1
@@ -485,30 +462,13 @@ typedef struct
   uint8_t           bDescriptorSubType;
   uint8_t           bFormatIndex;
   uint8_t           bNumFrameDescriptor;
-#ifdef USBD_UVC_FORMAT_UNCOMPRESSED
-  uint8_t           pGiudFormat[USBD_VC_GIUD_FORMAT_SIZE];
-  uint8_t           bBitsPerPixel;
-#else
   uint8_t           bmFlags;
-#endif /* USBD_UVC_FORMAT_UNCOMPRESSED */
   uint8_t           bDefaultFrameIndex;
   uint8_t           bAspectRatioX;
   uint8_t           bAspectRatioY;
   uint8_t           bInterlaceFlags;
   uint8_t           bCopyProtect;
 } __PACKED USBD_PayloadFormatDescTypeDef;
-
-#ifdef USBD_UVC_FORMAT_UNCOMPRESSED
-typedef struct
-{
-  uint8_t           bLength;
-  uint8_t           bDescriptorType;
-  uint8_t           bDescriptorSubType;
-  uint8_t           bColorPrimarie;
-  uint8_t           bTransferCharacteristics;
-  uint8_t           bMatrixCoefficients;
-} __PACKED USBD_ColorMatchingDescTypeDef;
-#endif /* USBD_UVC_FORMAT_UNCOMPRESSED */
 
 typedef struct
 {

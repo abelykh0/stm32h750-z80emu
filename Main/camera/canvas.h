@@ -12,7 +12,7 @@ extern "C" {
 #define CAMERA_TEXT_ROWS    (UVC_HEIGHT / 8)
 
 // Chroma subsampling mode: 444, 422
-#define CHROMA_FORMAT 422
+#define CHROMA_FORMAT 444
 
 #if (CHROMA_FORMAT == 444)
     #define H_SAMP_FACTOR 1
