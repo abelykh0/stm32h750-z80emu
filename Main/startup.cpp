@@ -57,8 +57,12 @@ extern "C" void setup()
 	config.ImageWidth = UVC_WIDTH;
 	config.ImageHeight = UVC_HEIGHT;
 	config.ColorSpace = JPEG_YCBCR_COLORSPACE;
+#if (CHROMA_FORMAT == 444)
 	config.ChromaSubsampling = JPEG_444_SUBSAMPLING;
-	config.ImageQuality = 90;
+#else
+	config.ChromaSubsampling = JPEG_422_SUBSAMPLING;
+#endif
+	config.ImageQuality = 80;
 	HAL_JPEG_ConfigEncoding(&hjpeg, &config);
 
 	cameraScreen.SetAttribute(0x2A10);

@@ -1,5 +1,6 @@
 #include "SpectrumScreen.h"
 #include "VideoRam.h"
+#include "camera/canvas.h"
 
 namespace z80
 {
@@ -60,6 +61,8 @@ void SpectrumScreen::Update8Pixels(VideoRam* videoRam, uint16_t address)
     		this->SetPixel(character * 8 + i, y, color);
     		break;
         }
+
+        ::SetPixel(character * 8 + i, y, color);
 	}
 }
 

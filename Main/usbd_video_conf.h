@@ -3,7 +3,7 @@
 
 #define UVC_WIDTH                   256U // 272U
 #define UVC_HEIGHT                  192U // 208U
-#define UVC_CAM_FPS_FS              15U
+#define UVC_CAM_FPS_FS              10U
 #define PACKET_SIZE_NO_HEADER       864U
 
 #define UVC_MAX_FRAME_SIZE          (UVC_WIDTH * UVC_HEIGHT * 3U / 2U) // nv12
