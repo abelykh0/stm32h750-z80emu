@@ -3,6 +3,7 @@
 
 #include "vga.h"
 #include "config.h"
+#include "resources.h"
 
 uint32_t L8Clut[256];
 
@@ -85,13 +86,22 @@ void LtdcInit()
 	pLayerCfg.Backcolor.Green = (argb >> 8) & 0xFF;
 	pLayerCfg.Backcolor.Red = (argb >> 16) & 0xFF;
 
-	pLayerCfg.WindowX0 = (VIDEO_MODE_H_WIDTH - H_SIZE) / 2;
-	pLayerCfg.WindowX1 = pLayerCfg.WindowX0 + H_SIZE - 1;
-	pLayerCfg.WindowY0 = (VIDEO_MODE_V_HEIGHT - V_SIZE) / 2;
-	pLayerCfg.WindowY1 = pLayerCfg.WindowY0 + V_SIZE - 1;
-	pLayerCfg.ImageWidth = H_SIZE;
-	pLayerCfg.ImageHeight = V_SIZE;
+#ifdef STATIC_IMAGE
+	uint32_t hSize = VIDEO_MODE_H_WIDTH;
+	uint32_t vSize = VIDEO_MODE_V_HEIGHT;
+	pLayerCfg.FBStartAdress = (uint32_t)(bmp1920x1080 + 1078);
+#else
+	uint32_t hSize = H_SIZE;
+	uint32_t vSize = V_SIZE;
 	pLayerCfg.FBStartAdress = (uint32_t)VideoRam;
+#endif
+
+	pLayerCfg.WindowX0 = (VIDEO_MODE_H_WIDTH - hSize) / 2;
+	pLayerCfg.WindowX1 = pLayerCfg.WindowX0 + hSize - 1;
+	pLayerCfg.WindowY0 = (VIDEO_MODE_V_HEIGHT - vSize) / 2;
+	pLayerCfg.WindowY1 = pLayerCfg.WindowY0 + vSize - 1;
+	pLayerCfg.ImageWidth = hSize;
+	pLayerCfg.ImageHeight = vSize;
 
 	if (HAL_LTDC_ConfigLayer(&hltdc, &pLayerCfg, 0) != HAL_OK)
 	{

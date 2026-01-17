@@ -10,6 +10,7 @@ extern "C" {
 extern uint8_t* ROM; // OpenSE Basic ROM
 extern uint8_t* font8x8;
 extern uint8_t* spectrumKeyboard;
+extern uint8_t* bmp1920x1080;
 
 #ifdef __cplusplus
 }

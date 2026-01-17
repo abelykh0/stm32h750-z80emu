@@ -64,15 +64,23 @@ extern "C" void setup()
 
 		f_mount(nullptr, nullptr, 1);
 	}
-
-	//gradient(VideoRam, L8Clut);
 */
+	//gradient(VideoRam, L8Clut);
+
+
+#ifdef STATIC_IMAGE
+	// Display static BMP from QSPI
+	memcpy(L8Clut, bmp1920x1080 + 54, sizeof(L8Clut));
+#endif
+
 	LtdcInit();
 
+#ifndef STATIC_IMAGE
 	fullScreen.Clear();
 
 	Ps2_Initialize();
 	zx_setup();
+#endif
 }
 
 extern "C" void loop()
