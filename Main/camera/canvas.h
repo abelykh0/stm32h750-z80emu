@@ -34,6 +34,7 @@ typedef struct
 
 extern uint8_t canvas[MCU_WIDTH * MCU_HEIGHT * sizeof(Mcu)];
 
+void InitCamera();
 void Clear(uint8_t color);
 void SetPixel(uint16_t x, uint16_t y, uint8_t color);
 

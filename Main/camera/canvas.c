@@ -1,5 +1,14 @@
+#include "stm32h7xx_hal.h"
 #include "string.h"
+
 #include "camera/canvas.h"
+#include "usbd_core.h"
+#include "usbd_desc.h"
+#include "usbd_video_if.h"
+
+extern JPEG_HandleTypeDef hjpeg;
+extern PCD_HandleTypeDef hpcd_USB_OTG_FS;
+extern USBD_HandleTypeDef hUsbDeviceFS;
 
 uint8_t canvas[] __attribute__(( section(".sram2") ));
 static Mcu* canvasMcu = (Mcu*)canvas;
@@ -115,4 +124,46 @@ void SetPixel(uint16_t x, uint16_t y, uint8_t color)
 
 	mcu->cb[yOffset][xOffset] = Cb;
 	mcu->cr[yOffset][xOffset] = Cr;
+}
+
+static void USB_DEVICE_Init()
+{
+	  if (USBD_Init(&hUsbDeviceFS, &FS_Desc, DEVICE_FS) != USBD_OK)
+	  {
+	    Error_Handler();
+	  }
+
+	  // Defaults are 128, 64, 128 (320 total)
+	  HAL_PCDEx_SetRxFiFo(&hpcd_USB_OTG_FS,    48);
+	  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_FS, 0, 16);
+	  HAL_PCDEx_SetTxFiFo(&hpcd_USB_OTG_FS, 1, 256);
+
+	  if (USBD_RegisterClass(&hUsbDeviceFS, &USBD_VIDEO) != USBD_OK)
+	  {
+	    Error_Handler();
+	  }
+	  if (USBD_VIDEO_RegisterInterface(&hUsbDeviceFS, &USBD_VIDEO_fops_FS) != USBD_OK)
+	  {
+	    Error_Handler();
+	  }
+	  if (USBD_Start(&hUsbDeviceFS) != USBD_OK)
+	  {
+	    Error_Handler();
+	  }
+}
+
+void InitCamera()
+{
+	USB_DEVICE_Init();
+	JPEG_ConfTypeDef config;
+	config.ImageWidth = UVC_WIDTH;
+	config.ImageHeight = UVC_HEIGHT;
+	config.ColorSpace = JPEG_YCBCR_COLORSPACE;
+	#if (CHROMA_FORMAT == 444)
+	config.ChromaSubsampling = JPEG_444_SUBSAMPLING;
+	#else
+	config.ChromaSubsampling = JPEG_422_SUBSAMPLING;
+	#endif
+	config.ImageQuality = 80;
+	HAL_JPEG_ConfigEncoding(&hjpeg, &config);
 }
