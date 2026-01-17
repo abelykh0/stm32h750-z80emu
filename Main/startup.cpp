@@ -85,6 +85,12 @@ extern "C" void setup()
 
 extern "C" void loop()
 {
+#ifdef STATIC_IMAGE
+	HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+	HAL_Delay(500);
+	return;
+#endif
+
 	if (loadSnapshotLoop())
 	{
 		return;
