@@ -21,8 +21,11 @@ using namespace Display;
 static uint32_t _frames = 0;
 extern RTC_HandleTypeDef hrtc;
 
-#define TEXT_COLUMNS 50
-#define TEXT_ROWS 37
+// Sized to fit comfortably inside 640x480 (the smallest mode we test) even
+// at HorizontalScale/VerticalScale=1 -- 50x37 (the F407 demo's size) only
+// fits once the video is scaled up 2x, which caused a real bug (see below).
+#define TEXT_COLUMNS 40
+#define TEXT_ROWS 28
 
 // Video memory
 static uint8_t _pixels[TEXT_COLUMNS * 8 * TEXT_ROWS];
@@ -38,7 +41,11 @@ VideoSettings _videoSettings {
                                // 1024x768's total failure.
     //&vga::timing_1024x768_60hz,
     //&vga::timing_800x600_60hz,
-    2, 2,  // Scale
+    1, 1,  // Scale -- was 2,2; that's what caused the 640x480 border
+           // underflow (50 text columns * 8 = 400px didn't fit in
+           // 640/2=320px). 1,1 also makes cycles_per_pixel reported to the
+           // DMA/TIM1 pacing match the timing table's value exactly, with
+           // no x2 confound, for a cleaner read on what's actually failing.
     TEXT_COLUMNS, TEXT_ROWS,
     _pixels, _attributes, &_borderColor
 };
