@@ -645,7 +645,14 @@ extern "C" RAM_CODE void TIM2_IRQHandler() {
   // Shock absorber: fires slightly before TIM3's start-of-active-video
   // interrupt, purely to idle the processor so the pipeline/caches are
   // primed by the time the real, timing-critical interrupt arrives.
+  //
+  // Unlike Cortex-M4, M7 does not guarantee WFI waits for outstanding bus
+  // writes (e.g. the SR clear right below) to actually complete before
+  // entering sleep -- a write still draining when TIM3's interrupt preempts
+  // reintroduces the exact variable vector-fetch latency this is supposed to
+  // hide. DSB forces that drain first.
   TIM2->SR = static_cast<std::uint16_t>(~TIM_SR_CC2IF);
+  __DSB();
   __WFI();
 }
 
