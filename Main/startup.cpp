@@ -1,149 +1,119 @@
-#include <camera/CameraScreen.h>
-#include "stm32h7xx_hal.h"
+#include "startup.h"
+
 #include <stdio.h>
+#include <string.h>
+#include "stm32h7xx_hal.h"
+#include "vga/vga.h"
+#include "vga/timing.h"
 
-#include "gpio.h"
-#include "tim.h"
-//#include "usb_host.h"
-//#include "usbh_hid.h"
-#include "fatfs.h"
+#include <Display/Screen.h>
+#include <keyboard/ps2Keyboard.h>
 
-#include "usbd_core.h"
-#include "usbd_desc.h"
-#include "usbd_video_if.h"
+using namespace Display;
 
-#include "w25qxx_qspi.h"
-#include "vga.h"
-#include "resources.h"
-#include "config.h"
-#include "camera/CameraScreen.h"
-#include "screen.h"
-#include "emulator.h"
-#include "sdcard.h"
-#include "emulator/videoRam.h"
-#include "emulator/z80main.h"
-#include "emulator/z80input.h"
-#include "keyboard/ps2Keyboard.h"
+#define BYTE_TO_BINARY_PATTERN "%c%c%c%c"
+#define BYTE_TO_BINARY(byte)  \
+  (byte & 0x08 ? '1' : '0'), \
+  (byte & 0x04 ? '1' : '0'), \
+  (byte & 0x02 ? '1' : '0'), \
+  (byte & 0x01 ? '1' : '0')
 
-#include "demo_colors/gradient.h"
-#include "demo_colors/display_bmp.h"
+static uint32_t _frames = 0;
+extern RTC_HandleTypeDef hrtc;
 
-Camera::CameraScreen cameraScreen;
-Display::Screen fullScreen;
+#define TEXT_COLUMNS 50
+#define TEXT_ROWS 37
 
-//extern USBH_HandleTypeDef hUsbHostHS;
+// Video memory
+static uint8_t _pixels[TEXT_COLUMNS * 8 * TEXT_ROWS];
+static uint8_t _borderColor;
+static uint16_t _attributes[TEXT_COLUMNS * TEXT_ROWS];
 
-static void MapFlash();
+// Define single rasterizer band
+VideoSettings _videoSettings {
+    &vga::timing_800x600_60hz, // Timing
+    2, 2,  // Scale
+    TEXT_COLUMNS, TEXT_ROWS,
+    _pixels, _attributes, &_borderColor
+};
+static Screen _screen(&_videoSettings);
+static vga::Band _band {
+    &_screen,
+    (unsigned int)(_videoSettings.Timing->video_end_line - _videoSettings.Timing->video_start_line),
+    nullptr
+};
 
 extern "C" void initialize()
 {
-	PrepareClut();
-	HAL_PWREx_EnableUSBVoltageDetector();
+    vga::init();
+    vga::configure_timing(*_videoSettings.Timing);
 }
 
 extern "C" void setup()
 {
-	MapFlash();
+    _screen.Clear();
+    vga::configure_band_list(&_band);
+    vga::video_on();
 
-/*
-	InitCamera();
-	cameraScreen.SetAttribute(0x2A10);
-	cameraScreen.Clear();
-*/
+    // Display frame
+    _screen.PrintAt(0, 0, "\xC9"); // ╔
+    _screen.PrintAt(TEXT_COLUMNS - 1, 0, "\xBB"); // ╗
+    _screen.PrintAt(0, TEXT_ROWS - 1, "\xC8"); // ╚
+    _screen.PrintAt(TEXT_COLUMNS - 1, TEXT_ROWS - 1, "\xBC"); // ╝
+    for (int i = 1; i < TEXT_COLUMNS - 1; i++)
+    {
+        _screen.PrintAt(i, 0, "\x0CD"); // ═
+        _screen.PrintAt(i, TEXT_ROWS - 1, "\x0CD"); // ═
+    }
+    for (int i = 1; i < TEXT_ROWS - 1; i++)
+    {
+        _screen.PrintAt(0, i, "\x0BA"); // ║
+        _screen.PrintAt(TEXT_COLUMNS - 1, i, "\x0BA"); // ║
+    }
 
-/*
-	if (f_mount(&SDFatFS, SDPath, 1) == FR_OK)
-	{
-		FIL file;
-		if (f_open(&file, (TCHAR*)u8"/Squirrel720x400.bmp", FA_READ) == FR_OK)
-		{
-			load_bmp_image(&file, VideoRam, L8Clut);
+    _screen.PrintAt(17, 2, "Hello, world!");
 
-			f_close(&file);
-		}
+    char buf[20];
 
-		f_mount(nullptr, nullptr, 1);
-	}
-*/
-	//gradient(VideoRam, L8Clut);
+    // This board's video wiring only reaches 4 color bits (2 green + 2 blue,
+    // no red -- see Main/vga/vgaConfig.h), so there are 16 colors instead of
+    // the F407 driver's 64.
+    for (int i = 0; i < 16; i++)
+    {
+        sprintf(buf, BYTE_TO_BINARY_PATTERN, BYTE_TO_BINARY(i));
+        _screen.SetAttribute((i << 8) | 0x00);
+        _screen.PrintAt(4 + (i % 4) * 10, 5 + (i / 4) * 2, "\xDF\xDF\xDF\xDF\xDF\xDF");
+        _screen.SetAttribute(0x0F00);
+        _screen.PrintAt(4 + (i % 4) * 10, 4 + (i / 4) * 2, buf);
+    }
 
+    _screen.SetAttribute(0x0F00);
+    for (uint16_t character = 1; character <= 255; character++)
+    {
+        _screen.PrintCharAt(character % 48 + 1, character / 48 + 20, character);
+    }
 
-#ifdef STATIC_IMAGE
-	// Display static BMP from QSPI
-	memcpy(L8Clut, bmp1920x1080 + 54, sizeof(L8Clut));
-#endif
-
-	LtdcInit();
-
-#ifndef STATIC_IMAGE
-	fullScreen.Clear();
-
-	Ps2_Initialize();
-	zx_setup();
-#endif
+    // Initialize PS2 Keyboard
+    Ps2_Initialize();
 }
 
 extern "C" void loop()
 {
-#ifdef STATIC_IMAGE
-	HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-	HAL_Delay(500);
-	return;
-#endif
+    // Display current date and time
 
-	if (loadSnapshotLoop())
-	{
-		return;
-	}
-
-	if (saveSnapshotLoop())
-	{
-		return;
-	}
-
-	if (showKeyboardLoop())
-	{
-		return;
-	}
-
-	int32_t result = zx_loop();
-	switch (result)
-	{
-	case KEY_ESCAPE:
-		clearHelp();
-		break;
-
-	case KEY_F1:
-		toggleHelp();
-		break;
-
-	case KEY_F2:
-		if (!saveSnapshotSetup())
-		{
-			showErrorMessage("Cannot initialize SD card");
-		}
-		break;
-
-	case KEY_F3:
-		if (!loadSnapshotSetup())
-		{
-			showErrorMessage("Error when loading from SD card");
-		}
-		break;
-
-	case KEY_F5:
-		zx_reset();
-		showHelp();
-		break;
-
-	case KEY_F10:
-		showKeyboardSetup();
-		break;
-
-	case KEY_F12:
-		showRegisters();
-		break;
-	}
+    RTC_TimeTypeDef time;
+    RTC_DateTypeDef date;
+    if (_screen._frames > _frames)
+    {
+        char formattedDateTime[50];
+        HAL_RTC_GetTime(&hrtc, &time, RTC_FORMAT_BIN);
+        HAL_RTC_GetDate(&hrtc, &date, RTC_FORMAT_BIN);
+        sprintf(formattedDateTime, "%04d-%02d-%02d %02d:%02d:%02d",
+                date.Year + 2000, date.Month, date.Date,
+                time.Hours, time.Minutes, time.Seconds);
+        _screen.PrintAlignCenter(34, formattedDateTime);
+        _frames = _screen._frames + 5;
+    }
 }
 
 extern "C" uint32_t HAL_GetTick(void)
@@ -153,21 +123,5 @@ extern "C" uint32_t HAL_GetTick(void)
 
 extern "C" bool onHardFault()
 {
-	/*
-	uint32_t cfsr = SCB->CFSR; // Configurable Fault Status Register
-	uint32_t hfsr = SCB->HFSR; // Hard Fault Status Register
-	uint32_t mmfar = SCB->MMFAR; // Memory Management Fault Address
-	uint32_t bfar = SCB->BFAR; // Bus Fault Address
-	char buffer[20];
-	sprintf(buffer, "%08lX", hfsr);
-	*/
-	return true;
+    return true;
 }
-
-static void MapFlash()
-{
-	w25qxx_Init();
-	w25qxx_EnterQPI();
-	w25qxx_Startup(w25qxx_NormalMode); // w25qxx_DTRMode
-}
-

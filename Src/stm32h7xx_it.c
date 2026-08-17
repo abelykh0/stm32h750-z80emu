@@ -178,16 +178,9 @@ void DebugMon_Handler(void)
 
 /**
   * @brief This function handles Pendable request for system service.
+  * @note  Defined in Main/vga/vga.cc -- the VGA driver uses PendSV for its
+  *        hblank/rasterization work, so it owns this handler.
   */
-void PendSV_Handler(void)
-{
-  /* USER CODE BEGIN PendSV_IRQn 0 */
-
-  /* USER CODE END PendSV_IRQn 0 */
-  /* USER CODE BEGIN PendSV_IRQn 1 */
-
-  /* USER CODE END PendSV_IRQn 1 */
-}
 
 /**
   * @brief This function handles System tick timer.

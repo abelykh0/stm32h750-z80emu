@@ -1,0 +1,84 @@
+#ifndef VGA_TIMING_H
+#define VGA_TIMING_H
+
+#include <cstdint>
+
+namespace vga {
+
+/*
+ * Describes the horizontal and vertical timing for a display mode, including
+ * the outer bounds of active video.
+ *
+ * Unlike the STM32F407 version of this driver, the CPU/bus clocks are NOT
+ * reprogrammed per mode -- this board runs a single fixed 480 MHz system
+ * clock (240 MHz AHB, and 240 MHz TIM1/TIM3 kernel clock after the APB
+ * timer-clock doubling rule), and every mode's line/pixel timing is derived
+ * from that one fixed clock via integer timer prescalers.  That keeps this
+ * port from having to reprogram H7's (considerably more complex) PLL1 at
+ * runtime, at the cost of only being able to hit pixel rates that are an
+ * exact integer division of 240 MHz.
+ */
+struct Timing {
+  enum class Polarity {
+    positive = 0,
+    negative = 1,
+  };
+
+  /*
+   * Number of 240 MHz timer ticks per pixel.  Different scanout strategies
+   * are invoked depending on this value (see vga.cc).  No scanout strategy
+   * can achieve fewer than 4 ticks per pixel (i.e. a 60 MHz pixel clock
+   * ceiling), so higher-resolution modes below intentionally render fewer
+   * distinct pixels per line than their nominal width and stretch them to
+   * fill the line -- see the comments on each Timing table entry.
+   */
+  std::uint16_t cycles_per_pixel;
+
+  /*
+   * Horizontal timing, expressed in pixels.
+   *
+   * The horizontal sync pulse implicitly starts at pixel zero of the line.
+   *
+   * Some of this information is redundant; it's stored this way to avoid
+   * having to rederive it in the driver.
+   */
+  std::uint16_t line_pixels;        // Total, including blanking.
+  std::uint16_t sync_pixels;        // Length of pulse.
+  std::uint16_t back_porch_pixels;  // Between end of sync and start of video.
+  std::uint16_t video_lead;         // Fudge factor: nudge DMA back in time.
+  std::uint16_t video_pixels;       // Maximum pixels in active video.
+  Polarity      hsync_polarity;     // Polarity of hsync pulse.
+
+  /*
+   * Vertical timing, expressed in lines.
+   *
+   * Because vertical timing is done in software, it's a little more flexible
+   * than horizontal timing.
+   */
+  std::uint16_t vsync_start_line;  // Top edge of sync pulse.
+  std::uint16_t vsync_end_line;    // Bottom edge of sync pulse.
+  std::uint16_t video_start_line;  // Top edge of active video.
+  std::uint16_t video_end_line;    // Bottom edge of active video.
+  Polarity      vsync_polarity;    // Polarity of vsync pulse.
+};
+
+/*
+ * Canned timings, derived from the fixed 240 MHz timer clock described above.
+ * cycles_per_pixel and line_pixels are chosen to approximate each mode's
+ * standard horizontal/vertical scan frequency (what the monitor actually
+ * syncs to), not its nominal pixel clock, which this fixed-clock driver
+ * generally can't hit exactly.
+ */
+extern Timing const timing_640x480_60hz;
+extern Timing const timing_800x600_60hz;
+
+// Sync timing approximates real 1024x768/1920x1080 modes closely enough for
+// most multisync displays to lock on, but the actual rendered content is far
+// coarser than the nominal width -- see timing.cc for the achievable pixel
+// counts and how far off the approximation is.
+extern Timing const timing_1024x768_60hz;
+extern Timing const timing_1920x1080_60hz;
+
+}  // namespace vga
+
+#endif  // VGA_TIMING_H

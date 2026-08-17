@@ -122,6 +122,20 @@ SECTIONS
     PROVIDE_HIDDEN (__fini_array_end = .);
   } >FLASH
 
+  /* VGA driver's timing-critical ISR code, loaded into ITCM for
+   * zero-wait-state execution. Main/vga/vga.cc copies this from flash to
+   * ITCM itself at init() time (there's no automatic startup copy for it),
+   * using the _sitcm/_eitcm/_siitcm symbols below. */
+  _siitcm = LOADADDR(.vga_ramcode);
+  .vga_ramcode :
+  {
+    . = ALIGN(4);
+    _sitcm = .;
+    *(.vga_ramcode)
+    . = ALIGN(4);
+    _eitcm = .;
+  } >ITCMRAM AT> FLASH
+
   /* used by the startup to initialize data */
   _sidata = LOADADDR(.data);
 
@@ -165,11 +179,26 @@ SECTIONS
     . = . + _Min_Stack_Size;
     . = ALIGN(8);
   } >RAM_D1
-  
+
+  /* VGA driver's rasterization working buffer: DTCM is the fastest RAM
+   * available to the CPU, and this buffer is never touched by DMA. */
+  .vga_local_ram (NOLOAD) :
+  {
+    . = ALIGN(4);
+    *(.vga_local_ram)
+  } >DTCMRAM
+
   .sram2 (NOLOAD):
   {
     . = ALIGN(4);
     *(.sram2)           /* .sram2 sections (variables) */
+
+    /* VGA driver's DMA scanout buffer. Deliberately NOT in RAM_D1: that
+     * region also holds the heap, which grows at runtime past the linker's
+     * static view of memory, so anything placed right after it there risks
+     * a future heap allocation silently corrupting it. */
+    . = ALIGN(4);
+    *(.vga_scan_ram)
   } >RAM_D2
   
   .sram3 (NOLOAD):
