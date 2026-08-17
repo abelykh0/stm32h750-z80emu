@@ -153,6 +153,34 @@ static void copy_ramcode_to_itcm() {
  * cycles_per_pixel on a fixed clock.
  */
 
+// A HAL_RCC_OscConfig/HAL_RCC_ClockConfig failure (e.g. a bad PLL parameter
+// that never locks) would otherwise fail silently -- HAL just returns
+// HAL_ERROR and whatever called it keeps going with the clock in whatever
+// state it was left in. Blink the LED fast and hang forever instead, so a
+// clock-config problem is visibly distinguishable from anything downstream
+// (TIM2/TIM3/GPIO) failing instead.
+static void fail_blinking(int code) {
+  __HAL_RCC_GPIOE_CLK_ENABLE();
+  GPIO_InitTypeDef gpio = {};
+  gpio.Pin = GPIO_PIN_3;  // LED_Pin (see Inc/main.h) -- hardcoded here so
+                          // vga.cc doesn't need to depend on main.h.
+  gpio.Mode = GPIO_MODE_OUTPUT_PP;
+  gpio.Pull = GPIO_NOPULL;
+  gpio.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOE, &gpio);
+
+  __disable_irq();
+  for (;;) {
+    for (int i = 0; i < code; ++i) {
+      HAL_GPIO_WritePin(GPIOE, GPIO_PIN_3, GPIO_PIN_SET);
+      for (volatile int d = 0; d < 500000; ++d) {}
+      HAL_GPIO_WritePin(GPIOE, GPIO_PIN_3, GPIO_PIN_RESET);
+      for (volatile int d = 0; d < 500000; ++d) {}
+    }
+    for (volatile int d = 0; d < 3000000; ++d) {}
+  }
+}
+
 // Switches HCLK (and hence the pixel clock) to match cfg, going by way of
 // the internal HSI oscillator so that PLL1 can be safely reprogrammed (it
 // can't be touched while it's actively feeding sys_ck).
@@ -163,12 +191,12 @@ static void configure_clocks(ClockConfig const &cfg) {
   hsi_osc.HSIState = RCC_HSI_ON;
   hsi_osc.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
   hsi_osc.PLL.PLLState = RCC_PLL_NONE;
-  HAL_RCC_OscConfig(&hsi_osc);
+  if (HAL_RCC_OscConfig(&hsi_osc) != HAL_OK) fail_blinking(1);
 
   RCC_ClkInitTypeDef to_hsi = {};
   to_hsi.ClockType = RCC_CLOCKTYPE_SYSCLK;
   to_hsi.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
-  HAL_RCC_ClockConfig(&to_hsi, cfg.flash_latency);
+  if (HAL_RCC_ClockConfig(&to_hsi, cfg.flash_latency) != HAL_OK) fail_blinking(2);
 
   // Reprogram and restart the main PLL from the crystal.
   RCC_OscInitTypeDef pll_osc = {};
@@ -184,7 +212,7 @@ static void configure_clocks(ClockConfig const &cfg) {
   pll_osc.PLL.PLLRGE = cfg.pll_vcirange;
   pll_osc.PLL.PLLVCOSEL = cfg.pll_vcosel;
   pll_osc.PLL.PLLFRACN = 0;
-  HAL_RCC_OscConfig(&pll_osc);
+  if (HAL_RCC_OscConfig(&pll_osc) != HAL_OK) fail_blinking(3);
 
   // Switch back to the (now reconfigured) PLL with the requested bus dividers.
   RCC_ClkInitTypeDef to_pll = {};
@@ -198,7 +226,7 @@ static void configure_clocks(ClockConfig const &cfg) {
   to_pll.APB2CLKDivider = cfg.apb_divisor;
   to_pll.APB3CLKDivider = RCC_APB3_DIV2;  // Unused by us; matches board default.
   to_pll.APB4CLKDivider = RCC_APB4_DIV2;  // Unused by us; matches board default.
-  HAL_RCC_ClockConfig(&to_pll, cfg.flash_latency);
+  if (HAL_RCC_ClockConfig(&to_pll, cfg.flash_latency) != HAL_OK) fail_blinking(4);
 }
 
 
