@@ -31,7 +31,6 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "screen/config.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
