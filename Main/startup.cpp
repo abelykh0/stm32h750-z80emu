@@ -31,9 +31,12 @@ static uint16_t _attributes[TEXT_COLUMNS * TEXT_ROWS];
 
 // Define single rasterizer band
 VideoSettings _videoSettings {
-    &vga::timing_1024x768_60hz, // Timing -- cycles_per_pixel=4, the direct
-                                 // mem-to-mem DMA path (no TIM1 pacing), to
-                                 // check whether that side-steps the jitter.
+    &vga::timing_640x480_60hz, // Timing -- loosest per-pixel DMA budget of
+                               // the 3 modes (~83ns/byte at HorizontalScale
+                               // 2), to check whether tighter budgets are
+                               // what's causing 800x600's jitter and
+                               // 1024x768's total failure.
+    //&vga::timing_1024x768_60hz,
     //&vga::timing_800x600_60hz,
     2, 2,  // Scale
     TEXT_COLUMNS, TEXT_ROWS,
