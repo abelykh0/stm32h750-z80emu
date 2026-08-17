@@ -1,13 +1,38 @@
 #include "timing.h"
 
+#include "stm32h7xx_hal.h"
+
 namespace vga {
 
-// cycles_per_pixel = 10 -> 240MHz/10 = 24MHz pixel clock (standard is
-// 25.175MHz, -4.7%). Same VESA line/frame structure as standard 640x480@60,
-// so the whole timing is uniformly ~4.7% slow: hsync ~30kHz (vs 31.469kHz),
-// refresh ~57.1Hz (vs 60Hz). Well within what a multisync display tolerates.
+// Common to every mode: 25MHz crystal / PLL1M=5 -> 5MHz VCO input (RANGE_2),
+// PLL1P=2. D1CPRE=1, HPRE=2 (HCLK = sys_ck/2), so sys_ck = 2*HCLK. Only
+// PLL1N (and hence sys_ck/HCLK) differs per mode.
+//
+// FLASH_LATENCY_4 is used uniformly -- it's what this board's default
+// 480MHz config already uses, and more wait states than strictly necessary
+// at a lower frequency is always safe, just not maximally fast.
+
+// PLL1N=80 -> VCO=400MHz (medium range) -> sys_ck=200MHz -> HCLK=100MHz.
+// HCLK <= 120MHz, so APB divisor is 1 (no APB timer-clock doubling needed
+// to keep TIM1/2/3's kernel clock equal to HCLK).
+// pixel clock = HCLK/4 = 25MHz (real VESA 640x480@60 clock is 25.175MHz,
+// -0.7%). Standard 640x480@60 line/frame proportions otherwise unchanged,
+// so hsync ~31.25kHz (vs 31.469kHz) and refresh ~59.5Hz (vs 60Hz) -- both
+// within any multisync display's tolerance.
 Timing const timing_640x480_60hz = {
-  .cycles_per_pixel = 10,
+  .clock_config = {
+    .crystal_hz   = 25000000,
+    .pll_m        = 5,
+    .pll_n        = 80,
+    .pll_p        = RCC_PLLP_DIV2,
+    .pll_vcosel   = RCC_PLL1VCOMEDIUM,
+    .pll_vcirange = RCC_PLL1VCIRANGE_2,
+    .d1cpre       = RCC_SYSCLK_DIV1,
+    .hpre         = RCC_HCLK_DIV2,
+    .apb_divisor  = RCC_APB1_DIV1,
+    .flash_latency = FLASH_LATENCY_4,
+  },
+  .cycles_per_pixel = 4,
 
   .line_pixels       = 800,
   .sync_pixels       = 96,
@@ -23,10 +48,26 @@ Timing const timing_640x480_60hz = {
   .vsync_polarity   = Timing::Polarity::negative,
 };
 
-// cycles_per_pixel = 6 -> 240MHz/6 = 40MHz exactly, which is the real
-// standard 800x600@60Hz pixel clock. This mode is timing-exact.
+// PLL1N=128 -> VCO=640MHz (wide range) -> sys_ck=320MHz -> HCLK=160MHz.
+// HCLK > 120MHz, so APB divisor is 2 (APB clock 80MHz, doubled by the timer
+// clock rule back up to 160MHz = HCLK).
+// pixel clock = HCLK/4 = 40MHz exactly -- the real VESA 800x600@60 clock.
+// With the standard line/frame counts, this mode is timing-exact: hsync
+// 37.879kHz and refresh 60.317Hz both match the standard precisely.
 Timing const timing_800x600_60hz = {
-  .cycles_per_pixel = 6,
+  .clock_config = {
+    .crystal_hz   = 25000000,
+    .pll_m        = 5,
+    .pll_n        = 128,
+    .pll_p        = RCC_PLLP_DIV2,
+    .pll_vcosel   = RCC_PLL1VCOWIDE,
+    .pll_vcirange = RCC_PLL1VCIRANGE_2,
+    .d1cpre       = RCC_SYSCLK_DIV1,
+    .hpre         = RCC_HCLK_DIV2,
+    .apb_divisor  = RCC_APB1_DIV2,
+    .flash_latency = FLASH_LATENCY_4,
+  },
+  .cycles_per_pixel = 4,
 
   .line_pixels       = 1056,
   .sync_pixels       = 128,
@@ -42,59 +83,45 @@ Timing const timing_800x600_60hz = {
   .vsync_polarity   = Timing::Polarity::positive,
 };
 
-// cycles_per_pixel = 4 is this driver's fastest possible setting (a 60MHz
-// pixel clock ceiling), still short of the real 1024x768@60 clock (65MHz).
-// Using the standard VESA line/frame counts as-is at 60MHz gives hsync
-// ~44.6kHz (vs 48.4kHz) and refresh ~55.4Hz (vs 60Hz) -- about 7.7% slow,
-// but the driver can still address the full 1024 nominal samples per line
-// (whether a given Rasterizer can actually produce that many bytes within
-// one line's worth of CPU time is a separate question -- see rasterizer.h).
-Timing const timing_1024x768_60hz = {
+// This mode needs ~229MHz HCLK, which would need a ~916MHz VCO with the
+// d1cpre=1/hpre=2 pattern the two modes above use (exceeding the 836MHz wide
+// range max) -- so this one uses hpre=1 instead: sys_ck = HCLK directly, no
+// 2x CPU-clock headroom over HCLK like the others get, since we're already
+// close to the ceiling for this mode.
+// PLL1N=92 -> VCO=460MHz (wide range) -> sys_ck=230MHz -> HCLK=230MHz (hpre=1).
+// HCLK > 120MHz, so APB divisor is 2, as above.
+// pixel clock = HCLK/4 = 57.5MHz (real clock is 57.283MHz, +0.38%). This is
+// the classic Mac 13"/14" RGB timing -- note it's actually 74.55Hz, not 60,
+// despite the "75hz" in the name (matching how this mode is usually referred
+// to informally). Standard proportions otherwise unchanged, so hsync
+// ~49.9kHz (vs 49.72kHz) and refresh ~74.8Hz (vs 74.55Hz).
+Timing const timing_832x624_75hz = {
+  .clock_config = {
+    .crystal_hz   = 25000000,
+    .pll_m        = 5,
+    .pll_n        = 92,
+    .pll_p        = RCC_PLLP_DIV2,
+    .pll_vcosel   = RCC_PLL1VCOWIDE,
+    .pll_vcirange = RCC_PLL1VCIRANGE_2,
+    .d1cpre       = RCC_SYSCLK_DIV1,
+    .hpre         = RCC_HCLK_DIV1,
+    .apb_divisor  = RCC_APB1_DIV2,
+    .flash_latency = FLASH_LATENCY_4,
+  },
   .cycles_per_pixel = 4,
 
-  .line_pixels       = 1344,
-  .sync_pixels       = 136,
-  .back_porch_pixels = 160,
+  .line_pixels       = 1152,
+  .sync_pixels       = 64,
+  .back_porch_pixels = 224,
   .video_lead        = 4,   // Fudge factor; may need retuning on real hardware.
-  .video_pixels      = 1024,
+  .video_pixels      = 832,
   .hsync_polarity    = Timing::Polarity::negative,
 
-  .vsync_start_line = 3,
-  .vsync_end_line   = 9,
-  .video_start_line = 38,
-  .video_end_line   = 806,
+  .vsync_start_line = 1,
+  .vsync_end_line   = 4,
+  .video_start_line = 43,
+  .video_end_line   = 667,
   .vsync_polarity   = Timing::Polarity::negative,
-};
-
-// The real 1920x1080@60 pixel clock (148.5MHz) is far beyond what this
-// fixed-240MHz-clock, bit-banged driver can produce (60MHz ceiling), so
-// unlike the modes above this doesn't use the standard pixel counts scaled
-// to 60MHz (that would give a wildly wrong ~27kHz hsync that no display
-// would accept as "1080p"). Instead, line_pixels is chosen so hsync/vsync
-// land almost exactly on the real CEA-861 1920x1080p60 frequencies
-// (67.5kHz / 60Hz) -- vertical line counts are unchanged from the standard,
-// since those don't depend on pixel clock at all -- while video_pixels
-// (776) is the *nominal* max addressable samples per line at this driver's
-// 60MHz ceiling, far short of 1920. In practice a Rasterizer for this mode
-// will render far fewer distinct samples than even that (see RasterInfo::
-// cycles_per_pixel), stretched to fill the line: real vertical resolution
-// stays a genuine 1080 lines, but horizontal detail will be noticeably
-// coarse. Good chance of a real monitor syncing to this as "1080p", though.
-Timing const timing_1920x1080_60hz = {
-  .cycles_per_pixel = 4,
-
-  .line_pixels       = 889,
-  .sync_pixels       = 18,
-  .back_porch_pixels = 60,
-  .video_lead        = 4,   // Fudge factor; may need retuning on real hardware.
-  .video_pixels      = 776,
-  .hsync_polarity    = Timing::Polarity::positive,
-
-  .vsync_start_line = 4,
-  .vsync_end_line   = 9,
-  .video_start_line = 45,
-  .video_end_line   = 1125,
-  .vsync_polarity   = Timing::Polarity::positive,
 };
 
 }  // namespace vga

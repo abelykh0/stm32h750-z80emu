@@ -34,18 +34,13 @@ static uint16_t _attributes[TEXT_COLUMNS * TEXT_ROWS];
 
 // Define single rasterizer band
 VideoSettings _videoSettings {
-    &vga::timing_640x480_60hz, // Timing -- loosest per-pixel DMA budget of
-                               // the 3 modes (~83ns/byte at HorizontalScale
-                               // 2), to check whether tighter budgets are
-                               // what's causing 800x600's jitter and
-                               // 1024x768's total failure.
-    //&vga::timing_1024x768_60hz,
-    //&vga::timing_800x600_60hz,
-    1, 1,  // Scale -- was 2,2; that's what caused the 640x480 border
-           // underflow (50 text columns * 8 = 400px didn't fit in
-           // 640/2=320px). 1,1 also makes cycles_per_pixel reported to the
-           // DMA/TIM1 pacing match the timing table's value exactly, with
-           // no x2 confound, for a cleaner read on what's actually failing.
+    &vga::timing_800x600_60hz, // Timing -- hits its real 40MHz pixel clock
+                               // exactly now that configure_timing()
+                               // reprograms HCLK per mode (see timing.cc).
+    //&vga::timing_640x480_60hz,
+    //&vga::timing_832x624_75hz,
+    1, 1,  // Scale. Keep text sized so TEXT_COLUMNS*8/TEXT_ROWS*8 fits
+           // within every mode's resolution -- 640x480 is the smallest.
     TEXT_COLUMNS, TEXT_ROWS,
     _pixels, _attributes, &_borderColor
 };
@@ -60,6 +55,13 @@ extern "C" void initialize()
 {
     vga::init();
     vga::configure_timing(*_videoSettings.Timing);
+
+    // configure_timing() just changed HCLK/SYSCLK. Update the cached clock
+    // frequency HAL derives baud rates etc. from, and reprogram SysTick's
+    // reload value (set by HAL_Init() for the *old* HCLK) so 1ms ticks
+    // (HAL_Delay, uwTick, RTC polling in loop()) stay accurate.
+    SystemCoreClockUpdate();
+    HAL_InitTick(TICK_INT_PRIORITY);
 }
 
 extern "C" void setup()

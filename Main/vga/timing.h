@@ -6,17 +6,46 @@
 namespace vga {
 
 /*
+ * Describes the PLL1/bus configuration needed to derive a given AHB (HCLK)
+ * frequency from the board's 25 MHz crystal, mirroring the fields of HAL's
+ * RCC_OscInitTypeDef/RCC_ClkInitTypeDef.
+ *
+ * H750's DMA-to-GPIO path (like every STM32 in this family) can only move
+ * one byte per 4 AHB cycles at best -- that ratio is fixed in hardware, not
+ * something firmware can adjust. So, like the original m4vgalib design (and
+ * the STM32F407 version of this driver), the way to hit a *specific* pixel
+ * clock is to reprogram the CPU/bus clock per mode so that HCLK/4 lands on
+ * it, not to inflate cycles_per_pixel on a fixed clock.
+ *
+ * The catch specific to H7: HCLK is capped at 240 MHz regardless of how
+ * high the Cortex-M7 core clock (up to 480 MHz) goes -- AHB1-4 are only
+ * rated to 240 MHz. That puts a hard ceiling of 240/4 = 60 MHz on the
+ * achievable pixel clock (vs. ~42 MHz on the F407's 168 MHz AHB), no matter
+ * how the PLL is configured. Modes whose real pixel clock exceeds that
+ * (1024x768, 1920x1080 below) can't be hit natively; see their comments in
+ * timing.cc for how they're approximated instead.
+ */
+struct ClockConfig {
+  std::uint32_t crystal_hz;       // External crystal frequency.
+  std::uint32_t pll_m;            // PLL1M: divides crystal down to the VCO input range.
+  std::uint32_t pll_n;            // PLL1N: multiplies up to the VCO frequency.
+  std::uint32_t pll_p;            // PLL1P: divides VCO down to sys_ck (must be even).
+  std::uint32_t pll_vcosel;       // RCC_PLL1VCOWIDE or RCC_PLL1VCOMEDIUM.
+  std::uint32_t pll_vcirange;     // RCC_PLL1VCIRANGE_x, matching crystal_hz/pll_m.
+
+  std::uint32_t d1cpre;           // RCC_SYSCLK_DIVx: sys_ck -> CPU core clock.
+  std::uint32_t hpre;             // RCC_HCLK_DIVx: CPU core clock -> HCLK (AHB).
+  std::uint32_t apb_divisor;      // RCC_APB1_DIVx == RCC_APB2_DIVx (kept equal
+                                   // so TIM1/TIM2/TIM3's kernel clock, after
+                                   // the "APB timer clock doubling" rule,
+                                   // always ends up exactly equal to HCLK).
+
+  std::uint32_t flash_latency;    // FLASH_LATENCY_x at this frequency.
+};
+
+/*
  * Describes the horizontal and vertical timing for a display mode, including
  * the outer bounds of active video.
- *
- * Unlike the STM32F407 version of this driver, the CPU/bus clocks are NOT
- * reprogrammed per mode -- this board runs a single fixed 480 MHz system
- * clock (240 MHz AHB, and 240 MHz TIM1/TIM3 kernel clock after the APB
- * timer-clock doubling rule), and every mode's line/pixel timing is derived
- * from that one fixed clock via integer timer prescalers.  That keeps this
- * port from having to reprogram H7's (considerably more complex) PLL1 at
- * runtime, at the cost of only being able to hit pixel rates that are an
- * exact integer division of 240 MHz.
  */
 struct Timing {
   enum class Polarity {
@@ -25,12 +54,18 @@ struct Timing {
   };
 
   /*
-   * Number of 240 MHz timer ticks per pixel.  Different scanout strategies
-   * are invoked depending on this value (see vga.cc).  No scanout strategy
-   * can achieve fewer than 4 ticks per pixel (i.e. a 60 MHz pixel clock
-   * ceiling), so higher-resolution modes below intentionally render fewer
-   * distinct pixels per line than their nominal width and stretch them to
-   * fill the line -- see the comments on each Timing table entry.
+   * The pixel clock is derived from HCLK by a fixed multiplier (below),
+   * making the CPU/bus clock configuration an integral part of the video
+   * timing -- see ClockConfig's comment.
+   */
+  ClockConfig clock_config;
+
+  /*
+   * Number of HCLK cycles per pixel.  Every mode below uses 4 (the fastest,
+   * most direct DMA path -- see vga.cc) except where the mode's real pixel
+   * clock exceeds the 60 MHz ceiling described above, in which case HCLK is
+   * simply maxed out at 240 MHz and the result is a slower-than-nominal but
+   * otherwise ordinary 4-cycles-per-pixel mode.
    */
   std::uint16_t cycles_per_pixel;
 
@@ -63,21 +98,16 @@ struct Timing {
 };
 
 /*
- * Canned timings, derived from the fixed 240 MHz timer clock described above.
- * cycles_per_pixel and line_pixels are chosen to approximate each mode's
- * standard horizontal/vertical scan frequency (what the monitor actually
- * syncs to), not its nominal pixel clock, which this fixed-clock driver
- * generally can't hit exactly.
+ * Canned timings at the board's 25 MHz crystal frequency, each hitting its
+ * real native pixel clock (or within a fraction of a percent of it) via
+ * per-mode PLL1 reprogramming -- all comfortably under H750's 240 MHz HCLK
+ * ceiling (60 MHz pixel clock max at 4 cycles/pixel). Modes whose real pixel
+ * clock exceeds that ceiling (e.g. 1024x768's 65 MHz, 1920x1080's 148.5 MHz)
+ * aren't included here.
  */
 extern Timing const timing_640x480_60hz;
 extern Timing const timing_800x600_60hz;
-
-// Sync timing approximates real 1024x768/1920x1080 modes closely enough for
-// most multisync displays to lock on, but the actual rendered content is far
-// coarser than the nominal width -- see timing.cc for the achievable pixel
-// counts and how far off the approximation is.
-extern Timing const timing_1024x768_60hz;
-extern Timing const timing_1920x1080_60hz;
+extern Timing const timing_832x624_75hz;  // Real rate is 74.55Hz, not 75.
 
 }  // namespace vga
 

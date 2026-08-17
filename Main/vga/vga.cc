@@ -148,6 +148,61 @@ static void copy_ramcode_to_itcm() {
 
 
 /*******************************************************************************
+ * Clock configuration.  See timing.h's ClockConfig comment for why this
+ * needs to be reprogrammed per mode, rather than just varying
+ * cycles_per_pixel on a fixed clock.
+ */
+
+// Switches HCLK (and hence the pixel clock) to match cfg, going by way of
+// the internal HSI oscillator so that PLL1 can be safely reprogrammed (it
+// can't be touched while it's actively feeding sys_ck).
+static void configure_clocks(ClockConfig const &cfg) {
+  // Step down to the 64MHz internal oscillator; this frees up the PLL.
+  RCC_OscInitTypeDef hsi_osc = {};
+  hsi_osc.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+  hsi_osc.HSIState = RCC_HSI_ON;
+  hsi_osc.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+  hsi_osc.PLL.PLLState = RCC_PLL_NONE;
+  HAL_RCC_OscConfig(&hsi_osc);
+
+  RCC_ClkInitTypeDef to_hsi = {};
+  to_hsi.ClockType = RCC_CLOCKTYPE_SYSCLK;
+  to_hsi.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
+  HAL_RCC_ClockConfig(&to_hsi, cfg.flash_latency);
+
+  // Reprogram and restart the main PLL from the crystal.
+  RCC_OscInitTypeDef pll_osc = {};
+  pll_osc.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  pll_osc.HSEState = RCC_HSE_ON;
+  pll_osc.PLL.PLLState = RCC_PLL_ON;
+  pll_osc.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+  pll_osc.PLL.PLLM = cfg.pll_m;
+  pll_osc.PLL.PLLN = cfg.pll_n;
+  pll_osc.PLL.PLLP = cfg.pll_p;
+  pll_osc.PLL.PLLQ = 8;  // Unused by us; matches this board's default config.
+  pll_osc.PLL.PLLR = 2;  // Unused by us; matches this board's default config.
+  pll_osc.PLL.PLLRGE = cfg.pll_vcirange;
+  pll_osc.PLL.PLLVCOSEL = cfg.pll_vcosel;
+  pll_osc.PLL.PLLFRACN = 0;
+  HAL_RCC_OscConfig(&pll_osc);
+
+  // Switch back to the (now reconfigured) PLL with the requested bus dividers.
+  RCC_ClkInitTypeDef to_pll = {};
+  to_pll.ClockType = RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_HCLK
+                   | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2
+                   | RCC_CLOCKTYPE_D3PCLK1 | RCC_CLOCKTYPE_D1PCLK1;
+  to_pll.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+  to_pll.SYSCLKDivider = cfg.d1cpre;
+  to_pll.AHBCLKDivider = cfg.hpre;
+  to_pll.APB1CLKDivider = cfg.apb_divisor;
+  to_pll.APB2CLKDivider = cfg.apb_divisor;
+  to_pll.APB3CLKDivider = RCC_APB3_DIV2;  // Unused by us; matches board default.
+  to_pll.APB4CLKDivider = RCC_APB4_DIV2;  // Unused by us; matches board default.
+  HAL_RCC_ClockConfig(&to_pll, cfg.flash_latency);
+}
+
+
+/*******************************************************************************
  * Driver API.
  */
 
@@ -169,9 +224,11 @@ void init() {
   // DMA2 streams 0-7 map to DMAMUX1 channels 8-15.
   DMAMUX1_Channel13->CCR = DMA_REQUEST_TIM1_UP;
 
-  // Configure the pixel-generation timer used during reduced-horizontal mode.
-  // TIM1's kernel clock is 240MHz in this board's fixed clock config (same as
-  // TIM2/TIM3's, conveniently -- see timing.h).  We'll load ARR under
+  // Configure the pixel-generation timer used during reduced-horizontal mode
+  // (i.e. when a Rasterizer can't produce a full line's worth of pixels in
+  // time -- not used by any of the canned modes in timing.cc, which all run
+  // at cycles_per_pixel=4). TIM1's kernel clock always equals HCLK, same as
+  // TIM2/TIM3's -- see timing.h's ClockConfig comment. We'll load ARR under
   // rasterizer control to synthesize 1/n rates.
   __HAL_RCC_TIM1_CLK_ENABLE();
   TIM1->PSC = 0;  // Divide input clock by 1.
@@ -289,6 +346,9 @@ void configure_timing(Timing const &timing) {
   // No scanout strategy can achieve fewer than 4 cycles per pixel.
   assert(timing.cycles_per_pixel >= 4);
   assert(timing.line_pixels <= max_pixels_per_line);
+
+  // Switch HCLK (and hence the pixel clock) to match this mode.
+  configure_clocks(timing.clock_config);
 
   // Bring TIM2/TIM3 back out of reset.
   __HAL_RCC_TIM3_RELEASE_RESET();
