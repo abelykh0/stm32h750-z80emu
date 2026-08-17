@@ -39,8 +39,10 @@ static constexpr unsigned
   // to delay DRQ until DMA has started.
   drq_shift_cycles = 2,
   // Fudge factor: how long the shock absorber IRQ should lead the actual start
-  // of video IRQ, in cycles.
-  shock_absorber_shift_cycles = 20,
+  // of video IRQ, in cycles. Cortex-M7's deeper pipeline/bus timing seems to
+  // need noticeably more margin here than the value that worked on M4 (F407)
+  // -- if the picture is still unstable, try increasing this further.
+  shock_absorber_shift_cycles = 60,
   // Amount of pad to place on either side of the working buffer, so that lazy
   // rasterizers can scribble slightly outside the lines -- in words.
   extra_pad_words = 4;
