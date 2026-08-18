@@ -97,7 +97,11 @@ int main(void)
   SystemClock_Config();
 
   /* Configure the peripherals common clocks */
-  PeriphCommonClock_Config();
+  // Temporarily skipped -- configures PLL2 for QSPI/SDMMC, which the VGA
+  // demo doesn't use, and it's currently hanging (possibly the same
+  // debugger-reset/VOS state issue as SystemClock_Config -- worth
+  // revisiting once that's confirmed one way or the other).
+  // PeriphCommonClock_Config();
 
   /* USER CODE BEGIN SysInit */
   initialize();
