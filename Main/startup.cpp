@@ -21,11 +21,13 @@ using namespace Display;
 static uint32_t _frames = 0;
 extern RTC_HandleTypeDef hrtc;
 
-// Sized to fit comfortably inside 640x480 (the smallest mode we test) even
-// at HorizontalScale/VerticalScale=1 -- 50x37 (the F407 demo's size) only
-// fits once the video is scaled up 2x, which caused a real bug (see below).
-#define TEXT_COLUMNS 40
-#define TEXT_ROWS 28
+// Fills the full 800x600 active area exactly (100*8=800, 75*8=600) at
+// HorizontalScale/VerticalScale=1 -- no border. Sized for timing_800x600_60hz
+// specifically; if you switch back to 640x480 or 832x624, shrink these back
+// down (e.g. to 40x28) or their border math will underflow -- see the
+// stm32f407-vga postmortem on this exact bug.
+#define TEXT_COLUMNS 100
+#define TEXT_ROWS 75
 
 // Video memory
 static uint8_t _pixels[TEXT_COLUMNS * 8 * TEXT_ROWS];
