@@ -181,6 +181,30 @@ static void fail_blinking(int code) {
   }
 }
 
+// TEMPORARY diagnostic: blinks the LED `count` times (a fixed busy-wait
+// delay, deliberately *not* HAL_Delay/SysTick-based, so it can't be thrown
+// off by whatever HAL_InitTick() did with the new clock) then returns,
+// letting the rest of configure_timing() proceed normally. Meant to answer
+// one question empirically: does HCLK actually reach its new target, or
+// does it silently stay at the old value despite HAL reporting success?
+static void diagnostic_blink(int count) {
+  __HAL_RCC_GPIOE_CLK_ENABLE();
+  GPIO_InitTypeDef gpio = {};
+  gpio.Pin = GPIO_PIN_3;
+  gpio.Mode = GPIO_MODE_OUTPUT_PP;
+  gpio.Pull = GPIO_NOPULL;
+  gpio.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOE, &gpio);
+
+  for (int i = 0; i < count; ++i) {
+    HAL_GPIO_WritePin(GPIOE, GPIO_PIN_3, GPIO_PIN_SET);
+    for (volatile int d = 0; d < 2000000; ++d) {}
+    HAL_GPIO_WritePin(GPIOE, GPIO_PIN_3, GPIO_PIN_RESET);
+    for (volatile int d = 0; d < 2000000; ++d) {}
+  }
+  for (volatile int d = 0; d < 12000000; ++d) {}
+}
+
 // Switches HCLK (and hence the pixel clock) to match cfg, going by way of
 // the internal HSI oscillator so that PLL1 can be safely reprogrammed (it
 // can't be touched while it's actively feeding sys_ck).
@@ -227,6 +251,13 @@ static void configure_clocks(ClockConfig const &cfg) {
   to_pll.APB3CLKDivider = RCC_APB3_DIV2;  // Unused by us; matches board default.
   to_pll.APB4CLKDivider = RCC_APB4_DIV2;  // Unused by us; matches board default.
   if (HAL_RCC_ClockConfig(&to_pll, cfg.flash_latency) != HAL_OK) fail_blinking(4);
+
+  // TEMPORARY: blink out round(CPU core clock / 40MHz) -- e.g. 8 blinks for
+  // 320MHz (800x600's target), 12 for 480MHz (if HCLK/SYSCLK silently never
+  // actually changed from the board's boot default), 5 for 200MHz
+  // (640x480's target). Remove once we've confirmed the real clock matches.
+  SystemCoreClockUpdate();
+  diagnostic_blink((SystemCoreClock + 20000000) / 40000000);
 }
 
 
